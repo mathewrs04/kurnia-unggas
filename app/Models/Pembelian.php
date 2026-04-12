@@ -3,14 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pembelian extends Model
 {
+    use SoftDeletes;
+    
+    // Konstanta Status
+    const STATUS_BELUM_BAYAR = 'belum_bayar';
+    const STATUS_SUDAH_BAYAR = 'sudah_bayar';
+
     protected $fillable = [
         'tanggal_pembelian',
         'kode_pembelian',
         'status',
         'peternak_id',
+        'user_id',
     ];
 
     protected $casts = [

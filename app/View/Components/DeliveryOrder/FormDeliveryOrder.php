@@ -3,38 +3,23 @@
 namespace App\View\Components\DeliveryOrder;
 
 use App\Models\DeliveryOrder;
-use App\Models\Timbangan;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class FormDeliveryOrder extends Component
 {
-    public $id = null;
-    public $timbangan_id = null;
-    public $timbangans;   // pakai plural biar jelas di view
-    public $keranjang = []; // opsional, jika ada detail DO
-
+    public $id, $kode_do, $peternak_id, $total_jumlah_ekor, $total_berat, $tanggal_do;
     public function __construct($id = null)
     {
-        $this->id = $id; // SELALU set, walau null
-
-        // hanya timbangan jenis DO
-        $this->timbangans = Timbangan::where('jenis', 'timbangan data DO')->get();
-
-        if ($id) {
-            $deliveryOrder = DeliveryOrder::with('keranjang')->find($id);
-            if ($deliveryOrder) {
-                $this->timbangan_id = $deliveryOrder->timbangan_id;
-                // kalau ada relasi detail keranjang:
-                if ($deliveryOrder->relationLoaded('keranjang')) {
-                    $this->keranjang = $deliveryOrder->keranjang
-                        ->map(fn($d) => [
-                            'jumlah_ekor' => $d->jumlah_ekor,
-                            'berat'       => $d->berat,
-                        ])->toArray();
-                }
-            }
+       if($id){
+            $deliveryOrder = DeliveryOrder::find($id);
+            $this->id = $deliveryOrder->id;
+            $this->peternak_id = $deliveryOrder->peternak_id;
+            $this->total_jumlah_ekor = $deliveryOrder->total_jumlah_ekor;
+            $this->total_berat = $deliveryOrder->total_berat;
+            $this->tanggal_do = Carbon::parse($deliveryOrder->tanggal_do)->format('Y-m-d');
         }
     }
 

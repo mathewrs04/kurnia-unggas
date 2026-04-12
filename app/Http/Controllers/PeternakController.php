@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Peternak;
-use Illuminate\Http\Request;
 
 class PeternakController extends Controller
 {
     public function index()
     {
         $peternaks = Peternak::with('pemasok')->get();
+        confirmDelete('HapusData', 'Yakin hapus data ini?');
         return view('peternak.index', compact('peternaks'));
     }
 
@@ -42,6 +42,7 @@ class PeternakController extends Controller
                 'nama' => request()->nama,
                 'alamat' => request()->alamat,
                 'no_telp' => request()->no_telp,
+                'user_id' => $id ? Peternak::find($id)->user_id : auth()->id(),
             ]
         );
 
@@ -57,10 +58,11 @@ class PeternakController extends Controller
         return redirect()->route('master.peternak.index');
     }
 
-    public function getData(){
-       $search = request()->query('search');
-       $query = Peternak::query();
-       $peternak = $query->where('nama', 'like', '%'.$search.'%')->get();
-       return response()->json($peternak);
+    public function getData()
+    {
+        $search = request()->query('search');
+        $query = Peternak::query();
+        $peternak = $query->where('nama', 'like', '%'.$search.'%')->get();
+        return response()->json($peternak);
     }
 }

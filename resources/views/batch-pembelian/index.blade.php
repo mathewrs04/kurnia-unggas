@@ -1,14 +1,14 @@
 @extends('layouts.app')
-@section('content_title', 'Data BatchPembelian')
+@section('content_title', 'Data Batch Pembelian')
 @section('content')
    <div class="card">
         <div class="card-header">
-            <h4 class="card-title">Data Batc hPembelian</h4>
+            <h4 class="card-title">Data Batch Pembelian</h4>
         </div>
         <div class="card-body">
            
             <div>
-                <x-batchpembelian.form-batchpembelian />
+                <x-batch-pembelian.form-batch-pembelian />
             </div>
             <x-alert :errors="$errors" />
             <table class="table table-sm" id="table1">
@@ -32,7 +32,7 @@
                             <td>{{ number_format($item->stok_kg, 2) }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <x-batchpembelian.form-batchpembelian :id="$item->id" />
+                                    <x-batch-pembelian.form-batch-pembelian :id="$item->id" />
                                     <a href="{{ route('master.batch-pembelian.destroy', $item->id) }}" data-confirm-delete="true"
                                         class="btn btn-danger">
                                         <i class="fas fa-trash"></i>

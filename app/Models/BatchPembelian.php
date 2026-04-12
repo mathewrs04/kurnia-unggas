@@ -3,15 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BatchPembelian extends Model
 {
+    use SoftDeletes;
+    
     protected $fillable = [
         'kode_batch',
         'harga_beli_per_kg',
         'stok_ekor',
         'stok_ekor_minimal',
         'stok_kg',
+        'user_id',
     ];
 
     protected $casts = [
@@ -25,6 +29,16 @@ class BatchPembelian extends Model
     public function pembelianDetails()
     {
         return $this->hasMany(PembelianDetail::class);
+    }
+
+    public function stokOpnames()
+    {
+        return $this->hasMany(StokOpname::class, 'batch_pembelian_id');
+    }
+
+    public function mortalitas()
+    {
+        return $this->hasMany(MortalitasAyam::class, 'batch_pembelian_id');
     }
 
     // Generate kode batch otomatis

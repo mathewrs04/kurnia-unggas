@@ -49,6 +49,7 @@ class PemasokController extends Controller
                 'nama_pabrik' => $request->nama_pabrik,
                 'nama_marketing' => $request->nama_marketing,
                 'no_telp_marketing' => $request->no_telp_marketing,
+                'user_id' => $id ? Pemasok::find($id)->user_id : auth()->id(),
             ]
         );
 

@@ -37,7 +37,7 @@
                             <td>{{ \Carbon\Carbon::parse($item->tanggal_pembelian)->format('d/m/Y') }}</td>
                             <td>{{ $item->kode_pembelian }}</td>
                             <td>
-                                @if($item->status == 'belum bayar')
+                                @if($item->status == 'belum_bayar')
                                     <span class="badge badge-warning">Belum Bayar</span>
                                 @else
                                     <span class="badge badge-success">Sudah Bayar</span>
@@ -46,21 +46,25 @@
                             <td>{{ $item->peternak->nama ?? '-' }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
-                                    @if($item->status == 'belum bayar')
+                        
+                                    @if($item->status == 'belum_bayar')
                                         <button type="button" class="btn btn-success btn-sm me-2" 
                                                 data-toggle="modal" 
                                                 data-target="#modalBayar" 
-                                                onclick="setBayarData({{ $item->id }}, '{{ $item->kode_pembelian }}', {{ $item->pembelianDetails->first()->timbangan->total_berat ?? 0 }}, {{ $item->pembelianDetails->first()->susut_kg ?? 0 }})">
+                                                onclick="setBayarData({{ $item->id }}, '{{ $item->kode_pembelian }}', {{ $item->pembelianDetails->first()->timbangan->total_berat ?? 0 }})">
                                             <i class="fas fa-money-bill"></i> Bayar
                                         </button>
                                     @endif
                                     <a href="{{ route('pembelian.show', $item->id) }}" class="btn btn-info btn-sm me-2">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('pembelian.destroy', $item->id) }}" data-confirm-delete="true"
-                                        class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                    <form action="{{ route('pembelian.destroy', $item->id) }}" method="POST" style="display: inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm" data-confirm-delete="true">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -70,6 +74,7 @@
         </div>
     </div>
 
+    
     <!-- Modal Bayar Pembelian -->
     <div class="modal fade" id="modalBayar" tabindex="-1" role="dialog" aria-labelledby="modalBayarLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -93,25 +98,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="total_berat_display">Total Berat (Kg)</label>
+                                    <label for="total_berat_display">Total Berat(Kg)</label>
                                     <input type="text" id="total_berat_display" class="form-control" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="susut_kg_display">Susut (Kg)</label>
-                                    <input type="text" id="susut_kg_display" class="form-control" readonly>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="berat_bersih_display">Berat Bersih (Kg)</label>
-                                    <input type="text" id="berat_bersih_display" class="form-control" readonly>
-                                </div>
-                            </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="harga_per_kg">Harga per Kg <span class="text-danger">*</span></label>
@@ -120,41 +113,32 @@
                                            min="0" required>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="metode_pembayaran">Metode Pembayaran <span class="text-danger">*</span></label>
+                                    <select name="metode_pembayaran" id="metode_pembayaran" class="form-control" required>
+                                        <option value="">-- Pilih Metode Pembayaran --</option>
+                                        @foreach ($metodePembayarans as $metode)
+                                            <option value="{{ $metode->id }}">{{ $metode->nama_metode }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
                         </div>
+
+                        
 
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
-                                    <label for="total_harus_bayar">Total yang Harus Dibayar</label>
-                                    <input type="text" id="total_harus_bayar" class="form-control form-control-lg" 
+                                    <label for="subtotal">Total yang Harus Dibayar</label>
+                                    <input type="text" name="subtotal" id="subtotal" class="form-control form-control-lg" 
                                            readonly style="font-size: 1.5rem; font-weight: bold; color: #28a745;">
                                 </div>
                             </div>
                         </div>
+                       
 
-                        <hr>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="nominal_bayar">Nominal Pembayaran <span class="text-danger">*</span></label>
-                                    <input type="number" name="nominal_bayar" id="nominal_bayar" 
-                                           class="form-control form-control-lg" 
-                                           placeholder="Masukkan nominal pembayaran" 
-                                           min="0" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="kembalian">Kembalian</label>
-                                    <input type="text" id="kembalian" class="form-control form-control-lg" 
-                                           readonly style="font-size: 1.5rem; font-weight: bold; color: #007bff;">
-                                </div>
-                            </div>
-                        </div>
 
                         <div class="row">
                             <div class="col-md-12">
@@ -166,16 +150,7 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-group">
-                                    <label for="catatan_bayar">Catatan</label>
-                                    <textarea name="catatan_bayar" id="catatan_bayar" 
-                                              class="form-control" rows="3" 
-                                              placeholder="Catatan pembayaran (opsional)"></textarea>
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -191,11 +166,13 @@
     </div>
 @endsection
 
-@push('script')
+@push('scripts')
     <script>
         let totalHarusBayar = 0;
 
-        function setBayarData(id, kodePembelian, totalBerat, susutKg) {
+
+        // Function untuk set data modal Bayar
+        function setBayarData(id, kodePembelian, totalBerat) {
             // Set action form
             $('#formBayar').attr('action', '/pembelian/' + id + '/bayar');
             
@@ -204,21 +181,11 @@
             
             // Set data berat
             $('#total_berat_display').val(parseFloat(totalBerat).toFixed(2) + ' Kg');
-            $('#susut_kg_display').val(parseFloat(susutKg).toFixed(2) + ' Kg');
-            
-            // Hitung berat bersih
-            let beratBersih = parseFloat(totalBerat) - parseFloat(susutKg);
-            $('#berat_bersih_display').val(beratBersih.toFixed(2) + ' Kg');
-            
-            // Store berat bersih for calculation
-            $('#berat_bersih_display').data('value', beratBersih);
             
             // Reset form
             $('#harga_per_kg').val('');
-            $('#nominal_bayar').val('');
-            $('#total_harus_bayar').val('');
-            $('#kembalian').val('');
-            $('#catatan_bayar').val('');
+            $('#subtotal').val('');
+
             totalHarusBayar = 0;
         }
 
@@ -226,80 +193,25 @@
             // Hitung total saat harga per kg diinput
             $('#harga_per_kg').on('input', function() {
                 let hargaPerKg = parseFloat($(this).val()) || 0;
-                let beratBersih = parseFloat($('#berat_bersih_display').data('value')) || 0;
+                let totalBerat = parseFloat($('#total_berat_display').val()) || 0;
                 
-                totalHarusBayar = hargaPerKg * beratBersih;
+                totalHarusBayar = hargaPerKg * totalBerat;
                 
-                $('#total_harus_bayar').val('Rp ' + totalHarusBayar.toLocaleString('id-ID'));
-                
-                // Recalculate kembalian jika sudah ada nominal
-                let nominalBayar = parseFloat($('#nominal_bayar').val()) || 0;
-                if (nominalBayar > 0) {
-                    let kembalian = nominalBayar - totalHarusBayar;
-                    $('#kembalian').val('Rp ' + kembalian.toLocaleString('id-ID'));
-                    
-                    // Validasi
-                    if (kembalian < 0) {
-                        $('#kembalian').css('color', '#dc3545');
-                        $('#kembalian').val('KURANG: Rp ' + Math.abs(kembalian).toLocaleString('id-ID'));
-                    } else {
-                        $('#kembalian').css('color', '#007bff');
-                    }
-                }
+                $('#subtotal').val('Rp ' + totalHarusBayar.toLocaleString('id-ID'));             
+            
             });
 
-            // Hitung kembalian saat nominal bayar diinput
-            $('#nominal_bayar').on('input', function() {
-                let nominalBayar = parseFloat($(this).val()) || 0;
-                let kembalian = nominalBayar - totalHarusBayar;
-                
-                if (totalHarusBayar > 0) {
-                    $('#kembalian').val('Rp ' + kembalian.toLocaleString('id-ID'));
-                    
-                    // Validasi
-                    if (kembalian < 0) {
-                        $('#kembalian').css('color', '#dc3545');
-                        $('#kembalian').val('KURANG: Rp ' + Math.abs(kembalian).toLocaleString('id-ID'));
-                    } else {
-                        $('#kembalian').css('color', '#007bff');
-                    }
-                } else {
-                    $('#kembalian').val('');
-                }
-            });
-
-            // Validasi sebelum submit
+            // Sebelum submit form bayar, update subtotal ke nilai integer
             $('#formBayar').on('submit', function(e) {
-                let nominalBayar = parseFloat($('#nominal_bayar').val()) || 0;
-                
-                if (nominalBayar < totalHarusBayar) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Pembayaran Kurang',
-                        text: 'Nominal pembayaran kurang dari total yang harus dibayar!',
-                        confirmButtonColor: '#d33'
-                    });
-                    return false;
-                }
-
-                if (totalHarusBayar <= 0) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Harga Belum Diisi',
-                        text: 'Silakan masukkan harga per kg terlebih dahulu!',
-                        confirmButtonColor: '#d33'
-                    });
-                    return false;
-                }
+                // Ubah subtotal dari display format ke integer
+                $('#subtotal').val(Math.round(totalHarusBayar));
             });
 
+           
             // Reset modal saat ditutup
             $('#modalBayar').on('hidden.bs.modal', function () {
                 $('#formBayar')[0].reset();
-                $('#total_harus_bayar').val('');
-                $('#kembalian').val('');
+                $('#subtotal').val('');
                 totalHarusBayar = 0;
             });
         });

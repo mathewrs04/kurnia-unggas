@@ -3,12 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PembelianDetail extends Model
 {
+    use SoftDeletes;
+    
     protected $fillable = [
         'pembelian_id',
         'batch_pembelian_id',
+        'produk_id',
         'timbangan_id',
         'delivery_order_id',
         'harga_beli_per_kg',
@@ -44,5 +48,11 @@ class PembelianDetail extends Model
     public function deliveryOrder()
     {
         return $this->belongsTo(DeliveryOrder::class);
+    }
+
+    // Relasi ke Metode Pembayaran
+    public function metodePembayaran()
+    {
+        return $this->belongsTo(MetodePembayaran::class);
     }
 }

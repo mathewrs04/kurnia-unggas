@@ -3,26 +3,36 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DeliveryOrder extends Model
 {
+    use SoftDeletes;
+    
     protected $fillable = [
         'kode_do',
-        'tanggal',
-        'jumlah_ekor',
-        'berat_total',
+        'peternak_id',
+        'total_jumlah_ekor',
+        'total_berat',
+        'tanggal_do',
     ];
 
     protected $casts = [
-        'tanggal' => 'date',
-        'jumlah_ekor' => 'integer',
-        'berat_total' => 'float',
+        'tanggal_do' => 'date',
+        'total_jumlah_ekor' => 'integer',
+        'total_berat' => 'float',
     ];
 
-    // Relasi ke Pembelian Detail (one to many)
-    public function pembelianDetails()
+    // Relasi ke Peternak
+    public function peternak()
     {
-        return $this->hasMany(PembelianDetail::class);
+        return $this->belongsTo(Peternak::class);
+    }
+
+    // Relasi ke Pembelian Detail (one to one)
+    public function pembelianDetail()
+    {
+        return $this->hasOne(PembelianDetail::class);
     }
 
     //generate kode DO otomatis

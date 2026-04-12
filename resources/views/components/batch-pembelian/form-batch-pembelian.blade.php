@@ -15,36 +15,29 @@
                     <div class="modal-body">
                         @csrf
                         <input type="hidden" name="id" value="{{ $id ?? '' }}">
-                        {{-- <div class="form-group">
-                            <label for="">Kode Batch</label>
-                            <input type="text" class="form-control" id="kode_batch" name="kode_batch" value="{{ $kode_batch }}">
-                        </div> --}}
                         <div class="form-group">
-                            <label for="">Harga Beli Per Kg</label>
-                            <input type="number" class="form-control" id="harga_beli_per_kg" name="harga_beli_per_kg" value="{{ $harga_beli_per_kg }}">
+                            <label for="harga_beli_per_kg">Harga Beli Per Kg</label>
+                            <input type="number" class="form-control" id="harga_beli_per_kg" name="harga_beli_per_kg" value="{{ $id ? $harga_beli_per_kg : old('harga_beli_per_kg') }}">
                         </div>
                         <div class="form-group">
-                            <label for="">Stok Ekor</label>
-                            <input type="number" class="form-control" id="stok_ekor" name="stok_ekor" value="{{ $stok_ekor }}">
+                            <label for="stok_ekor">Stok Ekor</label>
+                            <input type="number" class="form-control" id="stok_ekor" name="stok_ekor" value="{{ $id ? $stok_ekor : old('stok_ekor') }}">
                         </div>
                         <div class="form-group">
-                            <label for="">Stok Ekor Minimal</label>
-                            <input type="number" class="form-control" id="stok_ekor_minimal" name="stok_ekor_minimal" value="{{ $stok_ekor_minimal }}">
+                            <label for="stok_ekor_minimal">Stok Ekor Minimal</label>
+                            <input type="number" class="form-control" id="stok_ekor_minimal" name="stok_ekor_minimal" value="{{ $id ? $stok_ekor_minimal : old('stok_ekor_minimal') }}">
                         </div>
                         <div class="form-group">
-                            <label for="">Stok Kg</label>
-                            <input type="number" step="0.01" class="form-control" id="stok_kg" name="stok_kg" value="{{ $stok_kg }}">
+                            <label for="stok_kg">Stok Kg</label>
+                            <input type="number" step="0.01" class="form-control" id="stok_kg" name="stok_kg" value="{{ $id ? $stok_kg : old('stok_kg') }}">
                         </div>
-
                     </div>
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save changes</button>
                     </div>
                 </div>
-                <!-- /.modal-content -->
             </div>
-            <!-- /.modal-dialog -->
         </form>
     </div>
 </div>

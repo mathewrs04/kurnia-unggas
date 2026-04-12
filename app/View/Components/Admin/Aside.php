@@ -14,13 +14,15 @@ class Aside extends Component
     public $routes;
     public function __construct()
     {
-        $this->routes = [
+        $user = auth()->user();
+        $allRoutes = [
             [
                 "label" => "Dashboard",
                 "icon" => "fas fa-tachometer-alt",
                 "route_name" => "dashboard",
                 "route_active" => "dashboard",
-                "is_dropdown" => false
+                "is_dropdown" => false,
+                "roles" => ['pemilik', 'penanggung_jawab', 'kasir']
             ],
             [
                 "label" => "Master",
@@ -28,6 +30,7 @@ class Aside extends Component
                 "route_name" => "#",
                 "route_active" => "master.*",
                 "is_dropdown" => true,
+                "roles" => ['penanggung_jawab'],
                 "dropdown" => [
                     [
                         "label" => "Pemasok",
@@ -48,27 +51,144 @@ class Aside extends Component
                         "route_active" => "master.batch-pembelian.*",
                     ],
                     [
-                        "label" => "Timbangan",
+                        "label" => "Pelanggan",
                         "icon" => "far fa-building",
-                        "route_name" => "master.timbangan.index",
-                        "route_active" => "master.timbangan.*",
+                        "route_name" => "master.pelanggan.index",
+                        "route_active" => "master.pelanggan.*",
                     ],
                     [
-                        "label" => "Delivery Order",
+                        "label" => "Produk",
                         "icon" => "far fa-building",
-                        "route_name" => "master.delivery-order.index",
-                        "route_active" => "master.delivery-order.*",
+                        "route_name" => "master.produk.index",
+                        "route_active" => "master.produk.*",
                     ],
+                    [
+                        "label" => "Metode Pembayaran",
+                        "icon" => "far fa-credit-card",
+                        "route_name" => "master.metode-pembayaran.index",
+                        "route_active" => "master.metode-pembayaran.*",
+                    ],
+                    [
+                        "label" => "Holiday",
+                        "icon" => "far fa-building",
+                        "route_name" => "master.holiday.index",
+                        "route_active" => "master.holiday.*",
+                    ],
+                    [
+                        "label" => "Harga Ayam",
+                        "icon" => "far fa-building",
+                        "route_name" => "master.harga-ayam.index",
+                        "route_active" => "master.harga-ayam.*",
+                    ],
+                    [
+                        "label" => "Karyawan",
+                        "icon" => "far fa-building",
+                        "route_name" => "master.karyawan.index",
+                        "route_active" => "master.karyawan.*",
+                    ]
                 ]
+            ],
+            [
+                "label" => "Delivery Order",
+                "icon" => "far fa-building",
+                "route_name" => "delivery-order.index",
+                "route_active" => "delivery-order.*",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
             ],
             [
                 "label" => "Pembelian",
                 "icon" => "fas fa-tachometer-alt",
                 "route_name" => "pembelian.index",
                 "route_active" => "pembelian.*",
-                "is_dropdown" => false
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
             ],
+            [
+                "label" => "Penjualan",
+                "icon" => "fas fa-shopping-cart",
+                "route_name" => "penjualan.index",
+                "route_active" => "penjualan.index",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab', 'kasir']
+            ],
+            [
+                "label" => "Stok Opname",
+                "icon" => "fas fa-clipboard-check",
+                "route_name" => "stok-opname.index",
+                "route_active" => "stok-opname.*",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
+            ],
+            [
+                "label" => "Mortalitas Ayam",
+                "icon" => "fas fa-skull-crossbones",
+                "route_name" => "mortalitas-ayam.index",
+                "route_active" => "mortalitas-ayam.*",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
+            ],
+            [
+                "label" => "Susut Batch",
+                "icon" => "fas fa-balance-scale",
+                "route_name" => "susut-batch.index",
+                "route_active" => "susut-batch.index",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
+            ],
+            [
+                "label" => "Laporan Penjualan",
+                "icon" => "fas fa-chart-line",
+                "route_name" => "penjualan.laporan-harian",
+                "route_active" => "penjualan.laporan-harian",
+                "is_dropdown" => false,
+                "roles" => ['pemilik', 'penanggung_jawab']
+            ],
+            [
+                "label" => "Biaya Operasional",
+                "icon" => "fas fa-file-invoice-dollar",
+                "route_name" => "biaya-operasional.index",
+                "route_active" => "biaya-operasional.*",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
+            ],
+            [
+                "label" => "Forecast",
+                "icon" => "fas fa-chart-bar",
+                "route_name" => "forecast.index",
+                "route_active" => "forecast.*",
+                "is_dropdown" => false,
+                "roles" => ['pemilik', 'penanggung_jawab']
+            ],
+            [
+                "label" => "Report",
+                "icon" => "fas fa-database",
+                "route_name" => "#",
+                "route_active" => "report.*",
+                "is_dropdown" => true,
+                "roles" => ['penanggung_jawab'],
+                "dropdown" => [
+                    [
+                        "label" => "Timbangan",
+                        "icon" => "far fa-building",
+                        "route_name" => "report.timbangan.index",
+                        "route_active" => "report.timbangan.*",
+                    ],
+                    [
+                        "label" => "Laporan Keuntungan",
+                        "icon" => "far fa-building",
+                        "route_name" => "report.keuntungan.index",
+                        "route_active" => "report.keuntungan.*",
+                    ]
+                ]
+            ],
+
         ];
+
+        // Filter routes based on user role
+        $this->routes = collect($allRoutes)->filter(function($route) use ($user) {
+            return in_array($user->role, $route['roles']);
+        })->values()->toArray();
     }
 
     /**

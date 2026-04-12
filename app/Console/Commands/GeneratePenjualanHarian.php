@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Console\Scheduling\Schedule;
+
+class GeneratePenjualanHarian extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'app:generate-penjualan-harian';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
+        $data = \DB::table('penjualans')
+            ->join('penjualan_details', 'penjualans.id', '=', 'penjualan_details.penjualan_id')
+            ->where('penjualan_details.produk_id', 1) // ayam
+            ->selectRaw('
+            DATE(tanggal_jual) as tanggal,
+            SUM(jumlah_ekor) as total_ekor,
+            COUNT(DISTINCT penjualans.id) as total_transaksi
+        ')
+            ->groupByRaw('DATE(tanggal_jual)')
+            ->get();
+
+        foreach ($data as $row) {
+            \DB::table('penjualan_harians')->updateOrInsert(
+                ['tanggal' => $row->tanggal],
+                [
+                    'total_ekor' => $row->total_ekor,
+                    'total_transaksi' => $row->total_transaksi,
+                    'updated_at' => now(),
+                ]
+            );
+        }
+
+        $this->info('Penjualan harian berhasil diperbarui');
+    }
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->command('penjualan:harian')->dailyAt('20:00');
+    }
+}

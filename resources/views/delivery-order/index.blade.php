@@ -16,14 +16,16 @@
                 </div>
 
             @endif
-            <div>
-                <x-deliveryOrder.form-deliveryOrder />
+            <div class="mb-3">
+                <a href="{{ route('delivery-order.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tambah Delivery Order
+                </a>
             </div>
             <table class="table table-sm" id="table1">
                 <thead>
                     <tr>
                         <th>No</th>
-                       
+                        <th>Kode DO</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -31,11 +33,11 @@
                     @foreach ($deliveryOrders as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
-                           
+                            <td>{{ $item->kode_do }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <x-deliveryOrder.form-deliveryOrder :id="$item->id" />
-                                    <a href="{{ route('master.delivery_order.destroy', $item->id) }}" data-confirm-delete="true"
+                                    <a href="{{ route('delivery-order.destroy', $item->id) }}" data-confirm-delete="true"
                                         class="btn btn-danger">
                                         <i class="fas fa-trash"></i>
                                     </a>

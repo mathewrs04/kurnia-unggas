@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\BatchPembelian;
 use App\Models\DeliveryOrder;
+use App\Models\Karyawan;
 use App\Models\Keranjang;
+use App\Models\MetodePembayaran;
 use App\Models\Pembelian;
 use App\Models\PembelianDetail;
 use App\Models\Timbangan;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -19,118 +22,139 @@ class PembelianController extends Controller
         $pembelians = Pembelian::with(['peternak', 'pembelianDetails.timbangan'])
             ->latest()
             ->get();
-        
-        return view('pembelian.index', compact('pembelians'));
+
+        // Ambil delivery orders untuk modal link DO
+        $deliveryOrders = DeliveryOrder::orderBy('tanggal_do', 'desc')->get();
+
+        $metodePembayarans = MetodePembayaran::orderBy('nama_metode')->get();
+
+       
+        return view('pembelian.index', compact('pembelians', 'deliveryOrders', 'metodePembayarans'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         // Generate kode pembelian otomatis
         $kodePembelian = Pembelian::generateKodePembelian();
-        
-        $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
 
-        return view('pembelian.create', compact('kodePembelian', 'deliveryOrders'));
+        $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
+        
+        // Ambil data DO jika ada dari parameter
+        $selectedDO = null;
+        if ($request->has('do_id')) {
+            $selectedDO = DeliveryOrder::with('peternak')->find($request->do_id);
+        }
+
+        $karyawans = Karyawan::orderBy('nama')->get();
+
+        return view('pembelian.create', compact('kodePembelian', 'deliveryOrders', 'selectedDO', 'karyawans'));
     }
 
     public function store(Request $request)
     {
+       
         // Validasi input
         $request->validate([
             'peternak_id' => 'required|exists:peternaks,id',
             'tanggal_pembelian' => 'required|date',
             'kode_pembelian' => 'required|string|unique:pembelians,kode_pembelian',
-            'status' => 'required|in:belum bayar,sudah bayar',
-            
+
             // Validasi timbangan
-            'tanggal_timbangan' => 'required|date',
-            'nama_karyawan' => 'nullable|string|max:255',
-            
+            'karyawan_ids'    => 'nullable|array',
+            'karyawan_ids.*'  => 'integer|exists:karyawans,id',
+
             // Validasi keranjang
             'keranjangs' => 'required|array|min:1',
             'keranjangs.*.jumlah_ekor' => 'required|integer|min:1',
+            'keranjangs.*.berat_keranjang' => 'required|numeric|min:0',
+            'keranjangs.*.berat_total' => 'required|numeric|min:0',
             'keranjangs.*.berat_ayam' => 'required|numeric|min:0',
-            
-            // Validasi detail pembelian
-            'delivery_order_id' => 'nullable|exists:delivery_orders,id',
-            'susut_kg' => 'nullable|numeric|min:0',
+
+            // Validasi detail pembelian - DO WAJIB
+            'delivery_order_id' => 'required|exists:delivery_orders,id',
+            'susut_kg' => 'nullable|numeric',
         ], [
             'peternak_id.required' => 'Peternak harus dipilih',
             'peternak_id.exists' => 'Peternak tidak valid',
             'tanggal_pembelian.required' => 'Tanggal pembelian harus diisi',
             'kode_pembelian.required' => 'Kode pembelian harus diisi',
             'kode_pembelian.unique' => 'Kode pembelian sudah digunakan',
-            'status.required' => 'Status harus dipilih',
             'keranjangs.required' => 'Minimal harus ada 1 keranjang',
             'keranjangs.min' => 'Minimal harus ada 1 keranjang',
-            'batch_pembelian_id.required' => 'Batch pembelian harus dipilih',
+            'delivery_order_id.required' => 'Delivery Order harus dipilih',
+            'delivery_order_id.exists' => 'Delivery Order tidak valid',
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             // 1. Hitung total jumlah ekor dan total berat dari keranjang
             $totalJumlahEkor = 0;
             $totalBerat = 0;
-            
+
             foreach ($request->keranjangs as $keranjang) {
                 $totalJumlahEkor += $keranjang['jumlah_ekor'];
                 $totalBerat += $keranjang['berat_ayam'];
             }
 
-            // 2. Buat data timbangan (jenis otomatis: timbangan data pembelian)
+            // 2. Buat data timbangan (jenis otomatis: timbangan_data_pembelian)
             $timbangan = Timbangan::create([
-                'jenis' => 'timbangan data pembelian',
-                'tanggal' => $request->tanggal_timbangan,
+                'jenis'             => 'timbangan_data_pembelian',
+                'tanggal'           => $request->tanggal_pembelian,
                 'total_jumlah_ekor' => $totalJumlahEkor,
-                'total_berat' => $totalBerat,
-                'nama_karyawan' => $request->nama_karyawan,
+                'total_berat'       => $totalBerat,
             ]);
+            $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
 
             // 3. Simpan data keranjang
             foreach ($request->keranjangs as $keranjangData) {
                 Keranjang::create([
                     'timbangan_id' => $timbangan->id,
                     'jumlah_ekor' => $keranjangData['jumlah_ekor'],
+                    'berat_keranjang' => $keranjangData['berat_keranjang'],
+                    'berat_total' => $keranjangData['berat_total'],
                     'berat_ayam' => $keranjangData['berat_ayam'],
                 ]);
             }
 
-            // 4. Buat data pembelian
+            // 4. Buat data pembelian dengan status otomatis
             $pembelian = Pembelian::create([
                 'tanggal_pembelian' => $request->tanggal_pembelian,
                 'kode_pembelian' => $request->kode_pembelian,
-                'status' => $request->status,
+                'status' => Pembelian::STATUS_BELUM_BAYAR,
                 'peternak_id' => $request->peternak_id,
+                'user_id' => auth()->id(),
+            ]);
+
+            // Generate kode batch otomatis
+            $prefix = 'BATCH-';
+            $maxId = BatchPembelian::max('id');
+            $kodeBatch = $prefix . str_pad($maxId + 1, 5, '0', STR_PAD_LEFT);
+
+            $batchPembelian = BatchPembelian::create([
+                'kode_batch' => $kodeBatch,
+                'stok_ekor' => $totalJumlahEkor,
+                'stok_kg' => $totalBerat,
             ]);
 
             // 5. Buat detail pembelian (harga dan subtotal akan diisi saat pembayaran)
             PembelianDetail::create([
                 'pembelian_id' => $pembelian->id,
-                'batch_pembelian_id' => $request->batch_pembelian_id,
+                'batch_pembelian_id' => $batchPembelian->id,
+                'produk_id' => 1,
                 'timbangan_id' => $timbangan->id,
                 'delivery_order_id' => $request->delivery_order_id,
-                'harga_beli_per_kg' => 0, // Akan diisi saat pembayaran
-                'subtotal' => 0, // Akan diisi saat pembayaran
-                'susut_kg' => $request->susut_kg ?? 0,
+                'susut_kg' => $request->susut_kg,
             ]);
 
-            // 6. Update stok batch pembelian
-            $batch = BatchPembelian::find($request->batch_pembelian_id);
-            $beratBersih = $totalBerat - ($request->susut_kg ?? 0);
-            
-            $batch->stok_ekor += $totalJumlahEkor;
-            $batch->stok_kg += $beratBersih;
-            $batch->save();
 
             DB::commit();
-            
+
             Alert::success('Berhasil', 'Data pembelian berhasil disimpan');
             return redirect()->route('pembelian.index');
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            
+
             Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
@@ -142,61 +166,163 @@ class PembelianController extends Controller
             'peternak',
             'pembelianDetails.batchPembelian',
             'pembelianDetails.timbangan.keranjangs',
+            'pembelianDetails.timbangan.karyawans',
             'pembelianDetails.deliveryOrder'
         ])->findOrFail($id);
-        
+
         return view('pembelian.show', compact('pembelian'));
     }
 
     public function edit($id)
     {
-        $pembelian = Pembelian::with('pembelianDetails')->findOrFail($id);
+        $pembelian = Pembelian::with('pembelianDetails.timbangan.karyawans')->findOrFail($id);
         $batchPembelians = BatchPembelian::orderBy('kode_batch')->get();
         $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
-        
-        return view('pembelian.edit', compact('pembelian', 'batchPembelians', 'deliveryOrders'));
+
+        $karyawans = Karyawan::orderBy('nama')->get();
+
+        return view('pembelian.edit', compact('pembelian', 'batchPembelians', 'deliveryOrders', 'karyawans'));
     }
 
     public function update(Request $request, $id)
     {
-        // Logic for updating a specific Pembelian
+        // Validasi input
+        $request->validate([
+            'peternak_id' => 'required|exists:peternaks,id',
+            'tanggal_pembelian' => 'required|date',
+            'karyawan_ids'    => 'nullable|array',
+            'karyawan_ids.*'  => 'integer|exists:karyawans,id',
+            'keranjangs'      => 'required|array|min:1',
+            'keranjangs.*.jumlah_ekor' => 'required|integer|min:1',
+            'keranjangs.*.berat_ayam'  => 'required|numeric|min:0',
+            'delivery_order_id'        => 'nullable|exists:delivery_orders,id',
+        ], [
+            'peternak_id.required' => 'Peternak harus dipilih',
+            'tanggal_pembelian.required' => 'Tanggal pembelian harus diisi',
+            'keranjangs.required'         => 'Minimal harus ada 1 keranjang',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $pembelian = Pembelian::with('pembelianDetails.timbangan.keranjangs')->findOrFail($id);
+
+            // Cek apakah sudah dibayar
+            if ($pembelian->status == Pembelian::STATUS_SUDAH_BAYAR) {
+                Alert::warning('Peringatan', 'Pembelian yang sudah dibayar tidak dapat diubah');
+                return redirect()->route('pembelian.show', $id);
+            }
+
+            // Update data pembelian
+            $pembelian->update([
+                'peternak_id' => $request->peternak_id,
+                'tanggal_pembelian' => $request->tanggal_pembelian,
+                'status' => $request->delivery_order_id ? Pembelian::STATUS_BELUM_BAYAR : $pembelian->status
+            ]);
+
+            // Hitung total dari keranjang
+            $totalJumlahEkor = 0;
+            $totalBerat = 0;
+
+            foreach ($request->keranjangs as $keranjang) {
+                $totalJumlahEkor += $keranjang['jumlah_ekor'];
+                $totalBerat += $keranjang['berat_ayam'];
+            }
+
+            // Update timbangan
+            $detail = $pembelian->pembelianDetails->first();
+            if ($detail && $detail->timbangan) {
+                $timbangan = $detail->timbangan;
+                $timbangan->update([
+                    'tanggal'           => $request->tanggal_pembelian,
+                    'total_jumlah_ekor' => $totalJumlahEkor,
+                    'total_berat'       => $totalBerat,
+                ]);
+                $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
+
+                // Hapus keranjang lama
+                $timbangan->keranjangs()->delete();
+
+                // Tambah keranjang baru
+                foreach ($request->keranjangs as $keranjangData) {
+                    Keranjang::create([
+                        'timbangan_id' => $timbangan->id,
+                        'jumlah_ekor' => $keranjangData['jumlah_ekor'],
+                        'berat_ayam' => $keranjangData['berat_ayam'],
+                    ]);
+                }
+
+                // Update delivery order di detail pembelian
+                $susutKg = 0;
+                if ($request->delivery_order_id) {
+                    $deliveryOrder = DeliveryOrder::findOrFail($request->delivery_order_id);
+                    $susutKg = $deliveryOrder->total_berat - $totalBerat;
+                }
+
+                $detail->update([
+                    'delivery_order_id' => $request->delivery_order_id,
+                    'susut_kg' => $susutKg,
+                ]);
+
+                // Update batch pembelian stok
+                $batch = $detail->batchPembelian;
+                if ($batch) {
+                    $batch->update([
+                        'stok_ekor' => $totalJumlahEkor,
+                        'stok_kg' => $totalBerat,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            Alert::success('Berhasil', 'Data pembelian berhasil diupdate');
+            return redirect()->route('pembelian.show', $id);
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
     }
 
     public function destroy($id)
     {
         try {
             DB::beginTransaction();
-            
+
             $pembelian = Pembelian::findOrFail($id);
-            
-            // Hapus pembelian detail dan data terkait
-            foreach ($pembelian->pembelianDetails as $detail) {
-                // Update stok batch pembelian
-                $batch = $detail->batchPembelian;
-                $beratBersih = $detail->timbangan->total_berat - $detail->susut_kg;
-                
-                $batch->stok_ekor -= $detail->timbangan->total_jumlah_ekor;
-                $batch->stok_kg -= $beratBersih;
-                $batch->save();
-                
-                // Hapus keranjang
-                $detail->timbangan->keranjangs()->delete();
-                
-                // Hapus timbangan
-                $detail->timbangan->delete();
+
+            // Cek apakah sudah dibayar
+            if ($pembelian->status == Pembelian::STATUS_SUDAH_BAYAR) {
+                Alert::warning('Peringatan', 'Pembelian yang sudah dibayar tidak dapat dihapus');
+                return redirect()->route('pembelian.index');
             }
-            
-            // Hapus pembelian (akan cascade delete pembelian details)
+
+            // Soft delete pembelian detail dan data terkait
+            foreach ($pembelian->pembelianDetails as $detail) {
+                // Soft delete keranjang
+                if ($detail->timbangan) {
+                    $detail->timbangan->keranjangs()->delete();
+
+                    // Soft delete timbangan
+                    $detail->timbangan->delete();
+                }
+
+                // Soft delete pembelian detail
+                $detail->delete();
+            }
+
+            // Soft delete pembelian
             $pembelian->delete();
-            
+
             DB::commit();
-            
+
             Alert::success('Berhasil', 'Data pembelian berhasil dihapus');
             return redirect()->route('pembelian.index');
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            
+
             Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back();
         }
@@ -205,69 +331,117 @@ class PembelianController extends Controller
     // Method untuk proses pembayaran pembelian
     public function bayar(Request $request, $id)
     {
+        
         // Validasi input
-        $validated = $request->validate([
+        $request->validate([
             'harga_per_kg' => 'required|integer|min:0',
-            'nominal_bayar' => 'required|integer|min:0',
+            'subtotal' => 'required|integer|min:0',
             'tanggal_bayar' => 'required|date',
-            'catatan_bayar' => 'nullable|string',
+            'metode_pembayaran' => 'required|exists:metode_pembayarans,id',
         ], [
             'harga_per_kg.required' => 'Harga per kg harus diisi',
             'harga_per_kg.min' => 'Harga per kg tidak boleh negatif',
-            'nominal_bayar.required' => 'Nominal pembayaran harus diisi',
-            'nominal_bayar.min' => 'Nominal pembayaran tidak boleh negatif',
             'tanggal_bayar.required' => 'Tanggal pembayaran harus diisi',
+            'subtotal.required' => 'Subtotal harus diisi',
+            'subtotal.min' => 'Subtotal tidak boleh negatif',
+            'metode_pembayaran.required' => 'Metode pembayaran harus dipilih',
+            'metode_pembayaran.exists' => 'Metode pembayaran tidak valid',
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             // Cari data pembelian
-            $pembelian = Pembelian::with('pembelianDetails.timbangan')->findOrFail($id);
-            
-            // Cek apakah sudah dibayar
-            if ($pembelian->status == 'sudah bayar') {
+            $pembelian = Pembelian::with('pembelianDetails.deliveryOrder')->findOrFail($id);
+
+            // Cek status pembelian
+            if ($pembelian->status == Pembelian::STATUS_SUDAH_BAYAR) {
                 Alert::warning('Peringatan', 'Pembelian ini sudah dibayar sebelumnya');
                 return redirect()->route('pembelian.index');
             }
-            
+
             // Ambil detail pembelian
             $pembelianDetail = $pembelian->pembelianDetails->first();
-            
+
             if (!$pembelianDetail) {
-                throw new \Exception('Detail pembelian tidak ditemukan');
+                throw new Exception('Detail pembelian tidak ditemukan');
             }
-            
+
             // Hitung subtotal
             $totalBerat = $pembelianDetail->timbangan->total_berat;
-            $susutKg = $pembelianDetail->susut_kg ?? 0;
-            $beratBersih = $totalBerat - $susutKg;
-            $subtotal = $beratBersih * $request->harga_per_kg;
-            
-            // Validasi nominal pembayaran
-            if ($request->nominal_bayar < $subtotal) {
-                throw new \Exception('Nominal pembayaran kurang dari total yang harus dibayar');
-            }
-            
+            $subtotal = $totalBerat * $request->harga_per_kg;
+
+
             // Update harga beli per kg dan subtotal di pembelian detail
-            $pembelianDetail->harga_beli_per_kg = $request->harga_per_kg;
-            $pembelianDetail->subtotal = $subtotal;
-            $pembelianDetail->save();
-            
+            $pembelianDetail->update([
+                'harga_beli_per_kg' => $request->harga_per_kg,
+                'metode_pembayaran_id' => $request->metode_pembayaran,
+                'subtotal' => $subtotal,
+                'tanggal_bayar' => $request->tanggal_bayar,
+            ]);
+
+            // Update harga beli per kg di batch pembelian
+            if ($pembelianDetail->batchPembelian) {
+                $pembelianDetail->batchPembelian->update([
+                    'harga_beli_per_kg' => $request->harga_per_kg,
+                ]);
+            }
+
             // Update status pembelian menjadi sudah bayar
-            $pembelian->status = 'sudah bayar';
-            $pembelian->save();
-            
+            $pembelian->update([
+                'status' => Pembelian::STATUS_SUDAH_BAYAR,
+            ]);
+
             DB::commit();
-            
-            $kembalian = $request->nominal_bayar - $subtotal;
-            
-            Alert::success('Berhasil', 'Pembayaran berhasil diproses. Kembalian: Rp ' . number_format($kembalian, 0, ',', '.'));
+
+
+            Alert::success('Berhasil', 'Pembayaran berhasil diproses.');
             return redirect()->route('pembelian.index');
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
+
+            Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back();
+        }
+    }
+
+    // Method untuk link DO ke pembelian
+    public function linkDO(Request $request, $id)
+    {
+        $request->validate([
+            'delivery_order_id' => 'required|exists:delivery_orders,id',
+        ], [
+            'delivery_order_id.required' => 'Delivery Order harus dipilih',
+            'delivery_order_id.exists' => 'Delivery Order tidak valid',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $pembelian = Pembelian::with('pembelianDetails')->findOrFail($id);
+
             
+
+            // Update delivery_order_id di pembelian detail
+            $pembelianDetail = $pembelian->pembelianDetails->first();
+            if ($pembelianDetail) {
+                $pembelianDetail->update([
+                    'delivery_order_id' => $request->delivery_order_id,
+                ]);
+            }
+
+            // Update status pembelian menjadi 'belum bayar'
+            $pembelian->update([
+                'status' => Pembelian::STATUS_BELUM_BAYAR,
+            ]);
+
+            DB::commit();
+
+            Alert::success('Berhasil', 'Delivery Order berhasil di-link ke pembelian. Status berubah menjadi "Belum Bayar"');
+            return redirect()->route('pembelian.index');
+        } catch (Exception $e) {
+            DB::rollBack();
+
             Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back();
         }
