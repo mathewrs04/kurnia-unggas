@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pemasoks', function (Blueprint $table) {
+        Schema::create('metode_pembayarans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('nama_pabrik', 255);
-            $table->string('nama_marketing', 255);
-            $table->string('no_telp_marketing');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullonDelete();
+            $table->string('nama_metode');
+            $table->string('keterangan')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pemasoks');
+        Schema::dropIfExists('metode_pembayarans');
     }
 };

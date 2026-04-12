@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('peternaks', function (Blueprint $table) {
+        Schema::create('mortalitas_ayams', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('pemasok_id')->nullable()->constrained('pemasoks')->nullOnDelete();
-            $table->string('nama', 45);
-            $table->string('alamat', 255);
-            $table->string('no_telp', 45);
-            $table->timestamps();  
-            $table->softDeletes();
+            $table->foreignId('batch_pembelian_id')->constrained('batch_pembelians')->cascadeOnDelete();
+            $table->date('tanggal_mati');
+            $table->double('berat_kg')->nullable();
+            $table->integer('jumlah_ekor');
+            $table->string('catatan')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('peternaks');
+        Schema::dropIfExists('mortalitas_ayams');
     }
 };

@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('delivery_orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('timbangan_id')->constrained('timbangans')->onDelete('cascade');
+            $table->string('kode_do')->unique();
+            $table->foreignId('peternak_id')->nullable()->constrained('peternaks')->nullOnDelete();
+            $table->integer('total_jumlah_ekor');
             $table->double('total_berat');
-            
+            $table->date('tanggal_do'); 
             $table->timestamps();
+            $table->softDeletes();
         });
             
     }

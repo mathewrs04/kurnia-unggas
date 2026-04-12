@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('timbangan_id')->constrained('timbangans')->onDelete('cascade');
             $table->integer('jumlah_ekor');
+            $table->double('berat_keranjang');
+            $table->double('berat_total');
             $table->double('berat_ayam');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

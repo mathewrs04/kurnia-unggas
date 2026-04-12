@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('pembelians', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->date('tanggal_pembelian');
             $table->string('kode_pembelian')->unique();
-            $table->enum('status', ['belum bayar', 'sudah bayar']);
+            $table->enum('status', ['belum_bayar', 'sudah_bayar']);
             $table->foreignId('peternak_id')->nullable()->constrained('peternaks')->nullOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pemasoks', function (Blueprint $table) {
+        Schema::create('forecast_penjualans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('nama_pabrik', 255);
-            $table->string('nama_marketing', 255);
-            $table->string('no_telp_marketing');
+            $table->date('tanggal')->unique();
+            $table->float('prediksi');
+            $table->float('lower');
+            $table->float('upper');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pemasoks');
+        Schema::dropIfExists('forecast_penjualans');
     }
 };

@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('timbangans', function (Blueprint $table) {
+        Schema::create('harga_ayams', function (Blueprint $table) {
             $table->id();
-            $table->enum('jenis', ['timbangan_data_pembelian', 'timbangan_data_penjualan', 'timbangan_stok_opname']);
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullonDelete();
+            $table->foreignId('produks_id')->constrained('produks')->cascadeOnDelete();
+           
             $table->date('tanggal');
-            $table->integer('total_jumlah_ekor');
-            $table->double('total_berat');
+            $table->integer('harga_eceran');
+            $table->integer('harga_partai');
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('timbangans');
+        Schema::dropIfExists('harga_ayams');
     }
 };

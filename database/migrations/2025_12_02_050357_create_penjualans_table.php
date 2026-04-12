@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('peternaks', function (Blueprint $table) {
+        Schema::create('penjualans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('pemasok_id')->nullable()->constrained('pemasoks')->nullOnDelete();
-            $table->string('nama', 45);
-            $table->string('alamat', 255);
-            $table->string('no_telp', 45);
-            $table->timestamps();  
+            $table->string('no_nota')->unique();
+            $table->date('tanggal_jual');
+            $table->enum('tipe_penjualan', ['eceran', 'partai']);
+            $table->integer('diskon')->default(0);
+            $table->integer('subtotal');
+            $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');
+            $table->timestamps();
             $table->softDeletes();
-        });
+        }); 
     }
 
     /**
@@ -28,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('peternaks');
+        Schema::dropIfExists('penjualans');
     }
 };

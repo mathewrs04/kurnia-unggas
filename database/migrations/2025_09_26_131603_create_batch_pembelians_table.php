@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::create('batch_pembelians', function (Blueprint $table) {
             $table->id();
             $table->string('kode_batch');
-            $table->integer('harga_beli_per_kg');
+            $table->integer('harga_beli_per_kg')->nullable();
             $table->integer('stok_ekor');
-            $table->integer('stok_ekor_minimal');
+            $table->integer('stok_ekor_minimal')->nullable();
             $table->double('stok_kg');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
