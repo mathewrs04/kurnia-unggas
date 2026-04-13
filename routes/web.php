@@ -181,6 +181,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
             Route::get('/{id}/show', 'show')->name('show');
+            Route::put('/{id}/kirim', 'kirim')->name('kirim');
             Route::delete('/{id}/destroy', 'destroy')->name('destroy');
             Route::get('/produk/{id}', 'getProduk')->name('get-produk');
             Route::get('/batch/{id}', 'getBatch')->name('get-batch');

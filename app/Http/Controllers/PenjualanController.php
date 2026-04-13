@@ -214,12 +214,16 @@ class PenjualanController extends Controller
             }
 
             $subtotal = ($subtotalAyam + $subtotalJasa) - ($request->diskon ?? 0);
+            
+            // Cek status pengiriman
+            $status = $request->has('is_dikirim') ? Penjualan::STATUS_BELUM_DIKIRIM : Penjualan::STATUS_LANGSUNG;
 
             // Buat data penjualan
             $penjualan = Penjualan::create([
                 'no_nota' => $request->no_nota,
                 'tanggal_jual' => $request->tanggal_jual,
                 'tipe_penjualan' => $request->ayam['tipe_penjualan'],
+                'status' => $status,
                 'diskon' => $request->diskon ?? 0,
                 'subtotal' => $subtotal,
                 'pelanggan_id' => $request->pelanggan_id,
@@ -270,6 +274,25 @@ class PenjualanController extends Controller
         $diskon = $totalSebelumDiskon - $penjualan->subtotal;
 
         return view('penjualan.show', compact('penjualan', 'detailsAyam', 'detailsJasa', 'totalSebelumDiskon', 'diskon'));
+    }
+
+    public function kirim($id)
+    {
+        try {
+            $penjualan = Penjualan::findOrFail($id);
+            
+            if ($penjualan->status === Penjualan::STATUS_BELUM_DIKIRIM) {
+                $penjualan->update([
+                    'status' => Penjualan::STATUS_SUDAH_DIKIRIM
+                ]);
+            }
+
+            Alert::success('Berhasil', 'Status pengiriman berhasil diupdate');
+            return redirect()->back();
+        } catch (Exception $e) {
+            Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back();
+        }
     }
 
     public function destroy($id)

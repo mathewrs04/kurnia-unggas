@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('no_nota')->unique();
             $table->date('tanggal_jual');
             $table->enum('tipe_penjualan', ['eceran', 'partai']);
+            $table->enum('status', ['langsung', 'belum_dikirim', 'sudah_dikirim']);
             $table->integer('diskon')->default(0);
             $table->integer('subtotal');
             $table->foreignId('pelanggan_id')->constrained('pelanggans')->onDelete('cascade');

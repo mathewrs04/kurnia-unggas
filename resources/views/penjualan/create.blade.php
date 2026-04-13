@@ -22,15 +22,22 @@
                         </select>
                     </div>
 
-                    <div class="col-md-4 mb-2">
+                    <div class="col-md-3 mb-2">
                         <label>Tanggal Jual</label>
-                        <input type="date" name="tanggal_jual" class="form-control" value="{{ old('tanggal_jual') }}"
+                        <input type="date" name="tanggal_jual" class="form-control" value="{{ old('tanggal_jual', date('Y-m-d')) }}"
                             required>
                     </div>
 
-                    <div class="col-md-4 mb-2">
+                    <div class="col-md-3 mb-2">
                         <label>No Nota</label>
                         <input type="text" name="no_nota" class="form-control" value="{{ $noNota }}" readonly>
+                    </div>
+
+                    <div class="col-md-2 mb-2 d-flex align-items-center">
+                        <div class="custom-control custom-checkbox mt-4">
+                            <input class="custom-control-input" type="checkbox" id="is_dikirim" name="is_dikirim" value="1" {{ old('is_dikirim') ? 'checked' : '' }}>
+                            <label for="is_dikirim" class="custom-control-label">Perlu Dikirim?</label>
+                        </div>
                     </div>
 
                 </div>

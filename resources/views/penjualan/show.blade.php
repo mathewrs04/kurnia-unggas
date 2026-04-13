@@ -27,6 +27,20 @@
                         <th>Pelanggan</th>
                         <td>: {{ $penjualan->pelanggan->nama }}</td>
                     </tr>
+                    <tr>
+                        <th>Status Pengiriman</th>
+                        <td>: 
+                            @if($penjualan->status == App\Models\Penjualan::STATUS_LANGSUNG)
+                                <span class="badge badge-success">Langsung</span>
+                            @elseif($penjualan->status == App\Models\Penjualan::STATUS_BELUM_DIKIRIM)
+                                <span class="badge badge-warning">Belum Dikirim</span>
+                            @elseif($penjualan->status == App\Models\Penjualan::STATUS_SUDAH_DIKIRIM)
+                                <span class="badge badge-info">Sudah Dikirim</span>
+                            @else
+                                <span class="badge badge-secondary">{{ $penjualan->status }}</span>
+                            @endif
+                        </td>
+                    </tr>
                 </table>
             </div>
             <div class="col-md-6">

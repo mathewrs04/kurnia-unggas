@@ -9,10 +9,15 @@ class Penjualan extends Model
 {
     use SoftDeletes;
 
+    const STATUS_LANGSUNG = 'langsung';
+    const STATUS_BELUM_DIKIRIM = 'belum_dikirim';
+    const STATUS_SUDAH_DIKIRIM = 'sudah_dikirim';
+
     protected $fillable = [
         'no_nota',
         'tanggal_jual',
         'tipe_penjualan',
+        'status',
         'diskon',
         'subtotal',
         'pelanggan_id',
