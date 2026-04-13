@@ -21,23 +21,20 @@ class PembelianController extends Controller
     {
         $pembelians = Pembelian::with(['peternak', 'pembelianDetails.timbangan'])
             ->latest()
-            ->get();
-
-        // Ambil delivery orders untuk modal link DO
-        $deliveryOrders = DeliveryOrder::orderBy('tanggal_do', 'desc')->get();
-
+            ->get();   
         $metodePembayarans = MetodePembayaran::orderBy('nama_metode')->get();
 
-       
-        return view('pembelian.index', compact('pembelians', 'deliveryOrders', 'metodePembayarans'));
+        return view('pembelian.index', compact('pembelians', 'metodePembayarans'));
     }
 
     public function create(Request $request)
     {
-        // Generate kode pembelian otomatis
         $kodePembelian = Pembelian::generateKodePembelian();
-
-        $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
+        $deliveryOrders = DeliveryOrder::with('peternak')
+            ->whereDoesntHave('pembelianDetail')
+            ->orderBy('kode_do')
+            ->get();
+        $karyawans = Karyawan::orderBy('nama')->get();
         
         // Ambil data DO jika ada dari parameter
         $selectedDO = null;
@@ -45,15 +42,11 @@ class PembelianController extends Controller
             $selectedDO = DeliveryOrder::with('peternak')->find($request->do_id);
         }
 
-        $karyawans = Karyawan::orderBy('nama')->get();
-
         return view('pembelian.create', compact('kodePembelian', 'deliveryOrders', 'selectedDO', 'karyawans'));
     }
 
     public function store(Request $request)
     {
-       
-        // Validasi input
         $request->validate([
             'peternak_id' => 'required|exists:peternaks,id',
             'tanggal_pembelian' => 'required|date',
@@ -70,7 +63,7 @@ class PembelianController extends Controller
             'keranjangs.*.berat_total' => 'required|numeric|min:0',
             'keranjangs.*.berat_ayam' => 'required|numeric|min:0',
 
-            // Validasi detail pembelian - DO WAJIB
+            // Validasi detail pembelian 
             'delivery_order_id' => 'required|exists:delivery_orders,id',
             'susut_kg' => 'nullable|numeric',
         ], [
@@ -88,7 +81,7 @@ class PembelianController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Hitung total jumlah ekor dan total berat dari keranjang
+            //Hitung total jumlah ekor dan total berat dari keranjang
             $totalJumlahEkor = 0;
             $totalBerat = 0;
 
@@ -97,7 +90,7 @@ class PembelianController extends Controller
                 $totalBerat += $keranjang['berat_ayam'];
             }
 
-            // 2. Buat data timbangan (jenis otomatis: timbangan_data_pembelian)
+            //Buat data timbangan (jenis otomatis: timbangan_data_pembelian)
             $timbangan = Timbangan::create([
                 'jenis'             => 'timbangan_data_pembelian',
                 'tanggal'           => $request->tanggal_pembelian,
@@ -106,7 +99,7 @@ class PembelianController extends Controller
             ]);
             $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
 
-            // 3. Simpan data keranjang
+            //Simpan data keranjang
             foreach ($request->keranjangs as $keranjangData) {
                 Keranjang::create([
                     'timbangan_id' => $timbangan->id,
@@ -117,7 +110,7 @@ class PembelianController extends Controller
                 ]);
             }
 
-            // 4. Buat data pembelian dengan status otomatis
+            //Buat data pembelian dengan status otomatis belum bayar
             $pembelian = Pembelian::create([
                 'tanggal_pembelian' => $request->tanggal_pembelian,
                 'kode_pembelian' => $request->kode_pembelian,
@@ -126,18 +119,19 @@ class PembelianController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            // Generate kode batch otomatis
+            //Generate kode batch otomatis
             $prefix = 'BATCH-';
             $maxId = BatchPembelian::max('id');
             $kodeBatch = $prefix . str_pad($maxId + 1, 5, '0', STR_PAD_LEFT);
 
+            //Buat data batch pembelian
             $batchPembelian = BatchPembelian::create([
                 'kode_batch' => $kodeBatch,
                 'stok_ekor' => $totalJumlahEkor,
                 'stok_kg' => $totalBerat,
             ]);
 
-            // 5. Buat detail pembelian (harga dan subtotal akan diisi saat pembayaran)
+            //Buat detail pembelian (harga dan subtotal akan diisi saat pembayaran)
             PembelianDetail::create([
                 'pembelian_id' => $pembelian->id,
                 'batch_pembelian_id' => $batchPembelian->id,
@@ -175,18 +169,45 @@ class PembelianController extends Controller
 
     public function edit($id)
     {
-        $pembelian = Pembelian::with('pembelianDetails.timbangan.karyawans')->findOrFail($id);
-        $batchPembelians = BatchPembelian::orderBy('kode_batch')->get();
-        $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
+        $pembelian = Pembelian::with([
+            'peternak',
+            'pembelianDetails.timbangan.keranjangs',
+            'pembelianDetails.timbangan.karyawans',
+            'pembelianDetails.deliveryOrder'
+        ])->findOrFail($id);
+        
+        $detail = $pembelian->pembelianDetails->first();
+        $timbangan = $detail ? $detail->timbangan : null;
+        $keranjangs = $timbangan ? $timbangan->keranjangs : collect();
+        $currentDeliveryOrderId = $detail ? $detail->delivery_order_id : null;
+        $selectedKaryawanIds = old('karyawan_ids', $timbangan ? $timbangan->karyawans->pluck('id')->toArray() : []);
+        $keranjangCount = $keranjangs->count() > 0 ? $keranjangs->count() : 1;
+
+        $deliveryOrders = DeliveryOrder::with('peternak')
+            ->whereDoesntHave('pembelianDetail')
+            ->when($currentDeliveryOrderId, function ($query) use ($currentDeliveryOrderId) {
+                $query->orWhere('id', $currentDeliveryOrderId);
+            })
+            ->orderBy('kode_do')
+            ->get();
 
         $karyawans = Karyawan::orderBy('nama')->get();
 
-        return view('pembelian.edit', compact('pembelian', 'batchPembelians', 'deliveryOrders', 'karyawans'));
+        return view('pembelian.edit', compact(
+            'pembelian',
+            'deliveryOrders',
+            'karyawans',
+            'detail',
+            'timbangan',
+            'keranjangs',
+            'currentDeliveryOrderId',
+            'selectedKaryawanIds',
+            'keranjangCount'
+        ));
     }
 
     public function update(Request $request, $id)
     {
-        // Validasi input
         $request->validate([
             'peternak_id' => 'required|exists:peternaks,id',
             'tanggal_pembelian' => 'required|date',
@@ -194,6 +215,8 @@ class PembelianController extends Controller
             'karyawan_ids.*'  => 'integer|exists:karyawans,id',
             'keranjangs'      => 'required|array|min:1',
             'keranjangs.*.jumlah_ekor' => 'required|integer|min:1',
+            'keranjangs.*.berat_keranjang' => 'required|numeric|min:0',
+            'keranjangs.*.berat_total' => 'required|numeric|min:0',
             'keranjangs.*.berat_ayam'  => 'required|numeric|min:0',
             'delivery_order_id'        => 'nullable|exists:delivery_orders,id',
         ], [
@@ -248,6 +271,8 @@ class PembelianController extends Controller
                     Keranjang::create([
                         'timbangan_id' => $timbangan->id,
                         'jumlah_ekor' => $keranjangData['jumlah_ekor'],
+                        'berat_keranjang' => $keranjangData['berat_keranjang'],
+                        'berat_total' => $keranjangData['berat_total'],
                         'berat_ayam' => $keranjangData['berat_ayam'],
                     ]);
                 }
@@ -331,8 +356,6 @@ class PembelianController extends Controller
     // Method untuk proses pembayaran pembelian
     public function bayar(Request $request, $id)
     {
-        
-        // Validasi input
         $request->validate([
             'harga_per_kg' => 'required|integer|min:0',
             'subtotal' => 'required|integer|min:0',
@@ -371,7 +394,6 @@ class PembelianController extends Controller
             $totalBerat = $pembelianDetail->timbangan->total_berat;
             $subtotal = $totalBerat * $request->harga_per_kg;
 
-
             // Update harga beli per kg dan subtotal di pembelian detail
             $pembelianDetail->update([
                 'harga_beli_per_kg' => $request->harga_per_kg,
@@ -405,59 +427,4 @@ class PembelianController extends Controller
         }
     }
 
-    // Method untuk link DO ke pembelian
-    public function linkDO(Request $request, $id)
-    {
-        $request->validate([
-            'delivery_order_id' => 'required|exists:delivery_orders,id',
-        ], [
-            'delivery_order_id.required' => 'Delivery Order harus dipilih',
-            'delivery_order_id.exists' => 'Delivery Order tidak valid',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $pembelian = Pembelian::with('pembelianDetails')->findOrFail($id);
-
-            
-
-            // Update delivery_order_id di pembelian detail
-            $pembelianDetail = $pembelian->pembelianDetails->first();
-            if ($pembelianDetail) {
-                $pembelianDetail->update([
-                    'delivery_order_id' => $request->delivery_order_id,
-                ]);
-            }
-
-            // Update status pembelian menjadi 'belum bayar'
-            $pembelian->update([
-                'status' => Pembelian::STATUS_BELUM_BAYAR,
-            ]);
-
-            DB::commit();
-
-            Alert::success('Berhasil', 'Delivery Order berhasil di-link ke pembelian. Status berubah menjadi "Belum Bayar"');
-            return redirect()->route('pembelian.index');
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());
-            return redirect()->back();
-        }
-    }
-
-    // Method untuk mengambil data batch pembelian (AJAX)
-    public function getBatchPembelian()
-    {
-        $batchPembelians = BatchPembelian::orderBy('kode_batch')->get();
-        return response()->json($batchPembelians);
-    }
-
-    // Method untuk mengambil data delivery order (AJAX)
-    public function getDeliveryOrder()
-    {
-        $deliveryOrders = DeliveryOrder::orderBy('kode_do')->get();
-        return response()->json($deliveryOrders);
-    }
 }

@@ -58,6 +58,11 @@
                                     <a href="{{ route('pembelian.show', $item->id) }}" class="btn btn-info btn-sm me-2">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    @if($item->status == \App\Models\Pembelian::STATUS_BELUM_BAYAR)
+                                        <a href="{{ route('pembelian.edit', $item->id) }}" class="btn btn-warning btn-sm me-2 text-white">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    @endif
                                     <form action="{{ route('pembelian.destroy', $item->id) }}" method="POST" style="display: inline;">
                                         @csrf
                                         @method('DELETE')
@@ -169,7 +174,6 @@
 @push('scripts')
     <script>
         let totalHarusBayar = 0;
-
 
         // Function untuk set data modal Bayar
         function setBayarData(id, kodePembelian, totalBerat) {

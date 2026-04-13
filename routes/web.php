@@ -130,6 +130,7 @@ Route::middleware('auth')->group(function () {
             Route::post('/', 'store')->name('store');
             Route::get('/{id}/show', 'show')->name('show');
             Route::get('/{id}/edit', 'edit')->name('edit');
+            Route::put('/{id}', 'update')->name('update');
             Route::put('/{id}/link-do', 'linkDO')->name('link-do');
             Route::put('/{id}/bayar', 'bayar')->name('bayar');
             Route::delete('/{id}/destroy', 'destroy')->name('destroy');
