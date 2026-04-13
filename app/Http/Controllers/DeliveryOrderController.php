@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DeliveryOrder;
 use App\Models\PembelianDetail;
 use App\Models\Timbangan;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class DeliveryOrderController extends Controller
             DB::commit();
             Alert::success('Berhasil', 'Delivery Order berhasil disimpan. Lanjutkan dengan pembelian.');     
             return redirect()->route('pembelian.create', ['do_id' => $deliveryOrder->id]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'Failed to create Delivery Order: ' . $e->getMessage()]);
         }
@@ -123,7 +124,7 @@ class DeliveryOrderController extends Controller
             DB::commit();
             Alert::success('Berhasil', 'Delivery Order berhasil diperbarui.');
             return redirect()->route('delivery-order.index')->with('success', 'Delivery Order updated successfully.');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => 'Failed to update Delivery Order: ' . $e->getMessage()]);
         }
