@@ -109,6 +109,9 @@ class PenjualanController extends Controller
 
         try {
             $details = [];
+            $subtotalAyam = 0;
+            $subtotalJasa = 0;
+            $totalEkorAyam = 0;
 
             // Proses data ayam jika ada
             if ($request->has('ayam') && $request->ayam['tipe_penjualan']) {
@@ -165,6 +168,7 @@ class PenjualanController extends Controller
                     throw new Exception('Harga per kg harus diisi untuk penjualan ayam.');
                 }
 
+                $totalEkorAyam = $jumlahEkor;
                 $subtotalAyam = $jumlahBerat * $hargaPerKg;
 
                 $batchId = $ayam['batch_id'] ?? null;
@@ -193,7 +197,8 @@ class PenjualanController extends Controller
 
                     $jumlahEkor = $jasaItem['jumlah_ekor'];
                     $hargaSatuan = $produkJasa->harga_satuan;
-                    $subtotalJasa = $jumlahEkor * $hargaSatuan;
+                    $subtotalItemJasa = $jumlahEkor * $hargaSatuan;
+                    $subtotalJasa += $subtotalItemJasa;
                    
 
                     $details[] = [
@@ -203,7 +208,7 @@ class PenjualanController extends Controller
                         'jumlah_ekor' => $jumlahEkor,
                         'jumlah_berat' => null,
                         'harga_satuan' => $hargaSatuan,
-                        'subtotal' => $subtotalJasa,
+                        'subtotal' => $subtotalItemJasa,
                     ];
                 }
             }
@@ -217,6 +222,10 @@ class PenjualanController extends Controller
             
             // Cek status pengiriman
             $status = $request->has('is_dikirim') ? Penjualan::STATUS_BELUM_DIKIRIM : Penjualan::STATUS_LANGSUNG;
+
+            if ($status === Penjualan::STATUS_BELUM_DIKIRIM && $totalEkorAyam < 2) {
+                throw new Exception('Untuk pengiriman, minimal pembelian harus 2 ekor ayam.');
+            }
 
             // Buat data penjualan
             $penjualan = Penjualan::create([
