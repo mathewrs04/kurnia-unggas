@@ -144,9 +144,14 @@
 
                 <div class="row mt-3">
                     <div class="col-md-4">
-                        <label>Harga / Kg</label>
+                        <label>Harga / Kg (Rp)</label>
                         <input type="number" name="ayam[harga_per_kg]" id="harga_per_kg" class="form-control"
                             value="{{ old('ayam.harga_per_kg') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label>Subtotal Ayam (Rp)</label>
+                        <input type="text" id="subtotal_ayam_display" class="form-control font-weight-bold" readonly
+                            value="0" style="background-color: #f8f9fa;">
                     </div>
                 </div>
 
@@ -161,16 +166,25 @@
                     <thead>
                         <tr>
                             <th>Jasa</th>
-                            <th>Jumlah</th>
-                            <th></th>
+                            <th width="150">Jumlah</th>
+                            <th width="200" class="text-right">Subtotal (Rp)</th>
+                            <th width="50"></th>
                         </tr>
                     </thead>
                     <tbody id="jasaBody"></tbody>
                 </table>
 
-                <button type="button" id="tambahJasa" class="btn btn-primary btn-sm">
-                    + Tambah Jasa
-                </button>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <button type="button" id="tambahJasa" class="btn btn-primary btn-sm">
+                        + Tambah Jasa
+                    </button>
+                    
+                    <div class="col-md-4 px-0">
+                        <label>Subtotal Jasa (Rp)</label>
+                        <input type="text" id="subtotal_jasa_display" class="form-control font-weight-bold" readonly
+                            value="0" style="background-color: #f8f9fa;">
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -179,19 +193,22 @@
         <div class="card">
             <div class="card-body">
                 <div class="row align-items-end">
-
+                    
                     <div class="col-md-4">
-                        <label>Subtotal</label>
-                        <input type="number" name="subtotal" class="form-control" readonly required>
+                        <label>Grand Total (Rp)</label>
+                        <input type="text" id="subtotal_display" class="form-control font-weight-bold text-success text-right" readonly value="0" style="font-size: 1.2rem;">
+                        <input type="hidden" name="subtotal" value="0">
                     </div>
 
                     <div class="col-md-4">
-                        <label>Diskon</label>
-                        <input type="number" name="diskon" value="{{ old('diskon', 0) }}" class="form-control">
+                        <label>Diskon (Rp)</label>
+                        <input type="number" name="diskon" value="{{ old('diskon', 0) }}" class="form-control text-right text-danger">
                     </div>
 
                     <div class="col-md-4">
-                        <button class="btn btn-success w-100">Simpan Penjualan</button>
+                        <button class="btn btn-success w-100 font-weight-bold" style="font-size: 1.1rem;">
+                            <i class="fas fa-save mr-2"></i> Simpan & Cetak
+                        </button>
                     </div>
 
                 </div>
@@ -244,6 +261,9 @@
 
         /* ===== helper ===== */
         const num = v => parseFloat(v) || 0;
+        const formatRp = n => {
+            return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(n);
+        };
 
         /* ===== restore old values ===== */
         @if (old('ayam.tipe_penjualan'))
@@ -272,19 +292,26 @@
             btnTambahKeranjang.disabled = false;
         }
 
+        // Set initial keranjangs
         @if (old('ayam.keranjangs'))
             const oldKeranjangs = @json(old('ayam.keranjangs'));
             Object.values(oldKeranjangs).forEach((item) => {
                 tambahKeranjangRow(item);
             });
             updatePartai();
+        @else
+            tambahKeranjangRow(); // Tambahkan setidaknya 1 baris kosong di awal
         @endif
 
+        // Set initial jasa
         @if (old('jasa'))
             const oldJasa = @json(old('jasa'));
             Object.values(oldJasa).forEach((item) => {
                 tambahJasaRow(item);
             });
+        @else
+            // tambahkan jika diperlukan 1 baris kosong
+            // tambahJasaRow(); // Jasa opsional, biarkan kosong dulu
         @endif
 
         hitungSubtotal();
@@ -353,7 +380,7 @@
             const jumlah = data.jumlah_ekor || '';
 
             let optionsHtml = '<option value="">-- pilih --</option>';
-            @foreach ($produks->where('tipe_produk', 'jasa') as $j)
+            @foreach ($jasaProduks as $j)
                 optionsHtml +=
                     `<option value="{{ $j->id }}" ${produkId == '{{ $j->id }}' ? 'selected' : ''}>{{ $j->nama_produk }} - Rp{{ number_format($j->harga_satuan, 0, ',', '.') }}</option>`;
             @endforeach
@@ -361,17 +388,21 @@
             document.getElementById('jasaBody').insertAdjacentHTML('beforeend', `
             <tr>
                 <td>
-                <select name="jasa[${jasaIndex}][produk_id]" class="form-control jasaProduk">
-                ${optionsHtml}
-                </select>
+                    <select name="jasa[${jasaIndex}][produk_id]" class="form-control form-control-sm jasaProduk">
+                    ${optionsHtml}
+                    </select>
                 </td>
 
                 <td>
-                <input type="number" name="jasa[${jasaIndex}][jumlah_ekor]" class="form-control jasaJumlah" value="${jumlah}">
+                    <input type="number" name="jasa[${jasaIndex}][jumlah_ekor]" class="form-control form-control-sm jasaJumlah text-center" value="${jumlah}">
+                </td>
+                
+                <td class="text-right align-middle">
+                    <span class="jasaSubtotalDisplay font-weight-bold">0</span>
                 </td>
 
-                <td>
-                <button type="button" class="btn btn-danger btn-sm hapus">X</button>
+                <td class="text-center align-middle">
+                    <button type="button" class="btn btn-outline-danger btn-sm hapus py-0 px-2" title="Hapus"><i class="fas fa-times hapus"></i></button>
                 </td>
             </tr>
             `);
@@ -433,32 +464,50 @@
         /* ===== subtotal ===== */
         function hitungSubtotal() {
 
-            let total = 0;
+            let totalAyam = 0;
+            let totalJasa = 0;
             const hargaKg = num(form.querySelector('[name="ayam[harga_per_kg]"]').value);
 
             /* eceran */
             if (tipe.value === 'eceran') {
                 const berat = num(form.querySelector('#eceran [name="ayam[jumlah_berat]"]').value);
-                total += berat * hargaKg;
+                totalAyam += berat * hargaKg;
             }
 
             /* partai */
             if (tipe.value === 'partai') {
                 const berat = num(document.querySelector('#partai [name="ayam[jumlah_berat]"]').value);
-                total += berat * hargaKg;
+                totalAyam += berat * hargaKg;
             }
 
             /* jasa */
             document.querySelectorAll('#jasaBody tr').forEach(r => {
                 const id = r.querySelector('.jasaProduk')?.value;
                 const qty = num(r.querySelector('.jasaJumlah')?.value);
-                total += (hargaProduk[id] || 0) * qty;
+                const subJasa = (hargaProduk[id] || 0) * qty;
+                totalJasa += subJasa;
+                
+                // Update subtotal text per baris jasa
+                let tdSub = r.querySelector('.jasaSubtotalDisplay');
+                if (tdSub) tdSub.innerText = formatRp(subJasa);
             });
 
-            /* diskon */
-            total -= num(form.querySelector('[name="diskon"]').value);
+            // Update display subtotal
+            document.getElementById('subtotal_ayam_display').value = formatRp(totalAyam);
+            document.getElementById('subtotal_jasa_display').value = formatRp(totalJasa);
 
-            form.querySelector('[name="subtotal"]').value = total.toFixed(2);
+            /* total */
+            let grandTotal = totalAyam + totalJasa;
+
+            /* diskon */
+            const diskon = num(form.querySelector('[name="diskon"]').value);
+            grandTotal -= diskon;
+            
+            // Cegah minus
+            if (grandTotal < 0) grandTotal = 0;
+
+            form.querySelector('[name="subtotal"]').value = grandTotal.toFixed(2);
+            document.getElementById('subtotal_display').value = formatRp(grandTotal);
         }
     </script>
 @endpush

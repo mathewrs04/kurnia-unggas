@@ -29,18 +29,18 @@ class PenjualanController extends Controller
 
     public function create()
     {
-
         // Generate nomor nota otomatis
         $noNota = Penjualan::generateNoNota();
 
         $pelanggans = Pelanggan::orderBy('nama')->get();
         $produks = Produk::orderBy('nama_produk')->get();
+        $jasaProduks = Produk::where('tipe_produk', 'jasa')->orderBy('nama_produk')->get();
         $batches = BatchPembelian::where('stok_ekor', '>', 0)->orderBy('kode_batch')->get();
         $timbangans = Timbangan::orderBy('tanggal', 'desc')->get();
         $hargaAyams = HargaAyam::orderBy('id')->get()->keyBy('tanggal');
         $karyawans = Karyawan::orderBy('nama')->get();
 
-        return view('penjualan.create', compact('noNota', 'pelanggans', 'produks', 'batches', 'timbangans', 'hargaAyams', 'karyawans'));
+        return view('penjualan.create', compact('noNota', 'pelanggans', 'produks', 'jasaProduks', 'batches', 'timbangans', 'hargaAyams', 'karyawans'));
     }
 
     public function store(Request $request)
@@ -108,7 +108,6 @@ class PenjualanController extends Controller
         DB::beginTransaction();
 
         try {
-            $subtotalSebelumDiskon = 0;
             $details = [];
 
             // Proses data ayam jika ada
@@ -166,8 +165,7 @@ class PenjualanController extends Controller
                     throw new Exception('Harga per kg harus diisi untuk penjualan ayam.');
                 }
 
-                $subtotalSebelumDiskon = $jumlahBerat * $hargaPerKg;
-                $subtotalAyam = $subtotalSebelumDiskon - $request->diskon;
+                $subtotalAyam = $jumlahBerat * $hargaPerKg;
 
                 $batchId = $ayam['batch_id'] ?? null;
                 $timbanganId = isset($timbangan) ? $timbangan->id : ($ayam['timbangan_id'] ?? null);
@@ -196,7 +194,7 @@ class PenjualanController extends Controller
                     $jumlahEkor = $jasaItem['jumlah_ekor'];
                     $hargaSatuan = $produkJasa->harga_satuan;
                     $subtotalJasa = $jumlahEkor * $hargaSatuan;
-                    $subtotalSebelumDiskon += $subtotalJasa;
+                   
 
                     $details[] = [
                         'produk_id' => $produkJasa->id,
@@ -215,6 +213,7 @@ class PenjualanController extends Controller
                 throw new Exception('Minimal harus ada 1 item penjualan (ayam atau jasa)');
             }
 
+            $subtotal = ($subtotalAyam + $subtotalJasa) - ($request->diskon ?? 0);
 
             // Buat data penjualan
             $penjualan = Penjualan::create([
@@ -222,7 +221,7 @@ class PenjualanController extends Controller
                 'tanggal_jual' => $request->tanggal_jual,
                 'tipe_penjualan' => $request->ayam['tipe_penjualan'],
                 'diskon' => $request->diskon ?? 0,
-                'subtotal' => $request->subtotal,
+                'subtotal' => $subtotal,
                 'pelanggan_id' => $request->pelanggan_id,
                 'user_id' => auth()->id(),
             ]);
@@ -250,7 +249,8 @@ class PenjualanController extends Controller
             DB::commit();
 
             Alert::success('Berhasil', 'Data penjualan berhasil disimpan');
-            return redirect()->route('penjualan.index');
+            // Redirect with print session flag so it automatically triggers the print dialog on show
+            return redirect()->route('penjualan.show', $penjualan->id)->with('print_nota', true);
         } catch (Exception $e) {
             DB::rollBack();
 
@@ -264,7 +264,12 @@ class PenjualanController extends Controller
         $penjualan = Penjualan::with(['pelanggan', 'penjualanDetails.produk', 'penjualanDetails.batch', 'penjualanDetails.timbangan'])
             ->findOrFail($id);
 
-        return view('penjualan.show', compact('penjualan'));
+        $detailsAyam = $penjualan->penjualanDetails->where('produk.tipe_produk', 'ayam_hidup');
+        $detailsJasa = $penjualan->penjualanDetails->where('produk.tipe_produk', 'jasa');
+        $totalSebelumDiskon = $penjualan->penjualanDetails->sum('subtotal');
+        $diskon = $totalSebelumDiskon - $penjualan->subtotal;
+
+        return view('penjualan.show', compact('penjualan', 'detailsAyam', 'detailsJasa', 'totalSebelumDiskon', 'diskon'));
     }
 
     public function destroy($id)
@@ -295,7 +300,7 @@ class PenjualanController extends Controller
 
             Alert::success('Berhasil', 'Data penjualan berhasil dihapus');
             return redirect()->route('penjualan.index');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
 
             Alert::error('Gagal', 'Terjadi kesalahan: ' . $e->getMessage());

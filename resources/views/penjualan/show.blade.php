@@ -2,9 +2,14 @@
 @section('content_title', 'Detail Penjualan')
 @section('content')
 
-<div class="card">
-    <div class="card-header">
+<!-- Area Tampilan Layar Web -->
+<div class="d-print-none">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title">Informasi Penjualan</h3>
+        <a href="{{ route('penjualan.index') }}" class="btn btn-secondary ml-auto">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
     </div>
     <div class="card-body">
         <div class="row">
@@ -43,13 +48,6 @@
         </div>
     </div>
 </div>
-
-@php
-    $detailsAyam = $penjualan->penjualanDetails->where('produk.tipe_produk', 'ayam_hidup');
-    $detailsJasa = $penjualan->penjualanDetails->where('produk.tipe_produk', 'jasa');
-    $totalSebelumDiskon = $penjualan->penjualanDetails->sum('subtotal');
-    $diskon = $totalSebelumDiskon - $penjualan->subtotal;
-@endphp
 
 <!-- Detail Ayam -->
 @if($detailsAyam->count() > 0)
@@ -180,37 +178,120 @@
         </table>
     </div>
     <div class="card-footer">
-        <a href="{{ route('penjualan.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Kembali
-        </a>
         <button type="button" class="btn btn-primary" onclick="window.print()">
             <i class="fas fa-print"></i> Cetak
         </button>
     </div>
 </div>
 
-@endsection
+<!-- Akhir Area Web -->
+</div>
 
-@push('styles')
+<!-- Area Struk Cetak (Mode Thermal / Kertas Kecil) -->
+<div class="d-none d-print-block print-receipt">
+    
+    <div class="text-center font-weight-bold" style="font-size: 1.2rem; margin-bottom: 5px;">
+        KURNIA UNGGAS
+    </div>
+    <div class="text-center" style="font-size: 0.9rem; margin-bottom: 10px; line-height: 1.2;">
+        No: {{ $penjualan->no_nota }}<br>
+        Tgl: {{ $penjualan->tanggal_jual->format('d/m/Y') }}<br>
+        Pelanggan: {{ $penjualan->pelanggan->nama }}
+    </div>
+
+    <div style="border-top: 1px dashed #000; margin-bottom: 5px;"></div>
+
+    <table style="width: 100%; font-size: 0.9rem; line-height: 1.2;">
+        @foreach($detailsAyam as $detail)
+        <tr>
+            <td colspan="2">Ayam Hidup</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-size: 0.8rem;">
+                {{ number_format($detail->jumlah_ekor) }}ekor 
+                @if($detail->jumlah_berat) ({{ number_format($detail->jumlah_berat, 2) }}kg) @endif
+            </td>
+        </tr>
+        <tr>
+            <td>@ {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
+            <td class="text-right">{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+        </tr>
+        @endforeach
+
+        @foreach($detailsJasa as $detail)
+        <tr>
+            <td colspan="2">{{ $detail->produk->nama_produk }}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="font-size: 0.8rem;">{{ number_format($detail->jumlah_ekor) }}ekor</td>
+        </tr>
+        <tr>
+            <td>@ {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
+            <td class="text-right">{{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+        </tr>
+        @endforeach
+    </table>
+
+    <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+
+    <table style="width: 100%; font-size: 0.9rem; line-height: 1.2;">
+        @if($diskon > 0)
+        <tr>
+            <td>Subtotal</td>
+            <td class="text-right">{{ number_format($totalSebelumDiskon, 0, ',', '.') }}</td>
+        </tr>
+        <tr>
+            <td>Diskon</td>
+            <td class="text-right">-{{ number_format($diskon, 0, ',', '.') }}</td>
+        </tr>
+        @endif
+        <tr class="font-weight-bold" style="font-size: 1rem;">
+            <td>Total</td>
+            <td class="text-right">Rp {{ number_format($penjualan->subtotal, 0, ',', '.') }}</td>
+        </tr>
+    </table>
+
+    <div style="border-top: 1px dashed #000; margin: 10px 0 5px;"></div>
+    
+    <div class="text-center" style="font-size: 0.8rem;">
+        Terima Kasih<br>
+        Barang yang dibeli tidak dapat ditukar
+    </div>
+</div>
+
 <style>
+    /* CSS Khusus Mode Print */
     @media print {
-        .sidebar,
-        .main-header,
-        .main-footer,
-        .card-footer,
-        .btn {
-            display: none !important;
+        @page {
+            margin: 0;
+            size: 58mm 500mm; /* Standar printer thermal kecil (lebar 58mm atau 80mm) */
         }
-
-        .content-wrapper {
-            margin: 0 !important;
-            padding: 0 !important;
+        body * {
+            visibility: hidden;
         }
-
-        .card {
-            border: none !important;
-            box-shadow: none !important;
+        .print-receipt, .print-receipt * {
+            visibility: visible;
+        }
+        .print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 5px;
+            font-family: monospace, sans-serif;
+            color: #000;
         }
     }
 </style>
+
+@endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('print_nota'))
+            window.print();
+        @endif
+    });
+</script>
 @endpush
