@@ -117,7 +117,10 @@ Route::middleware('auth')->group(function () {
         Route::prefix('delivery-order')->as('delivery-order.')->controller(DeliveryOrderController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
+            Route::get('/{id}/show', 'show')->name('show');
+            Route::get('/{id}/edit', 'edit')->name('edit');
             Route::post('/', 'store')->name('store');
+            Route::put('/{id}', 'update')->name('update');
             Route::delete('/{id}/destroy', 'destroy')->name('destroy');
         });
 

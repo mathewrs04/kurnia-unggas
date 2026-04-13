@@ -39,7 +39,7 @@ class DeliveryOrder extends Model
     public static function kodeDO()
     {
         $prefix = 'DO-';
-        $maxId = self::max('id');
+        $maxId = self::withTrashed()->max('id');
         $kodeDO = $prefix . str_pad($maxId + 1, 5, '0', STR_PAD_LEFT);
         return $kodeDO;
     }
