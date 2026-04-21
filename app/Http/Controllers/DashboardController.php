@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BatchPembelian;
 use App\Models\Penjualan;
 use App\Models\Pembelian;
 use App\Models\BiayaOperasional;
@@ -33,10 +34,10 @@ class DashboardController extends Controller
     {
         // Ringkasan bulan ini
         $bulanIni = Carbon::now()->format('Y-m');
-        
+
         $totalPenjualan = Penjualan::whereRaw("DATE_FORMAT(tanggal_jual, '%Y-%m') = ?", [$bulanIni])->sum('subtotal');
         $totalPembelian = Pembelian::whereRaw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') = ?", [$bulanIni])
-            ->with('pembelianDetails')->get()->sum(function($pembelian) {
+            ->with('pembelianDetails')->get()->sum(function ($pembelian) {
                 return $pembelian->pembelianDetails->sum('subtotal');
             });
         $totalBiayaOperasional = BiayaOperasional::whereRaw("DATE_FORMAT(tanggal_biaya, '%Y-%m') = ?", [$bulanIni])->sum('subtotal');
@@ -45,9 +46,9 @@ class DashboardController extends Controller
 
         // Data grafik penjualan per bulan (6 bulan terakhir)
         $grafikPenjualan = Penjualan::select(
-                DB::raw("DATE_FORMAT(tanggal_jual, '%Y-%m') as bulan"),
-                DB::raw('SUM(subtotal) as total')
-            )
+            DB::raw("DATE_FORMAT(tanggal_jual, '%Y-%m') as bulan"),
+            DB::raw('SUM(subtotal) as total')
+        )
             ->where('tanggal_jual', '>=', Carbon::now()->subMonths(6))
             ->groupBy('bulan')
             ->orderBy('bulan')
@@ -55,8 +56,8 @@ class DashboardController extends Controller
 
         // Data grafik pembelian per bulan (6 bulan terakhir)
         $grafikPembelian = Pembelian::select(
-                DB::raw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') as bulan")
-            )
+            DB::raw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') as bulan")
+        )
             ->with('pembelianDetails')
             ->where('tanggal_pembelian', '>=', Carbon::now()->subMonths(6))
             ->get()
@@ -79,8 +80,47 @@ class DashboardController extends Controller
 
     private function dashboardPenanggungJawab()
     {
-        // Dashboard umum untuk penanggung jawab
-        return view('dashboard.penanggung-jawab');
+        $adaBatchAman = BatchPembelian::whereColumn('stok_ekor', '>', 'stok_ekor_minimal')->exists();
+        $batchesKritis = BatchPembelian::whereColumn('stok_ekor', '<=', 'stok_ekor_minimal')
+            ->where('stok_ekor', '>', 0)
+            ->get();
+
+        if (!$adaBatchAman && $batchesKritis->count()) {
+            $pesan = 'Perhatian! Stok batch berikut sudah mencapai batas minimal: ';
+            foreach ($batchesKritis as $b) {
+                $pesan .= $b->kode_batch . ' (sisa ' . $b->stok_ekor . ' ekor), ';
+            }
+            session()->flash('warning', rtrim($pesan, ', '));
+        }
+
+        // Data grafik penjualan per bulan (6 bulan terakhir)
+        $grafikPenjualan = Penjualan::select(
+            DB::raw("DATE_FORMAT(tanggal_jual, '%Y-%m') as bulan"),
+            DB::raw('SUM(subtotal) as total')
+        )
+            ->where('tanggal_jual', '>=', Carbon::now()->subMonths(6))
+            ->groupBy('bulan')
+            ->orderBy('bulan')
+            ->get();
+
+        // Data grafik pembelian per bulan (6 bulan terakhir)
+        $grafikPembelian = Pembelian::select(
+            DB::raw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') as bulan")
+        )
+            ->with('pembelianDetails')
+            ->where('tanggal_pembelian', '>=', Carbon::now()->subMonths(6))
+            ->get()
+            ->groupBy('bulan')
+            ->map(fn($items) => [
+                'bulan' => $items[0]->bulan,
+                'total' => $items->sum(fn($pembelian) => $pembelian->pembelianDetails->sum('subtotal'))
+            ])
+            ->values();
+
+        return view('dashboard.penanggung-jawab', compact(
+            'grafikPenjualan',
+            'grafikPembelian'
+        ));
     }
 
     private function dashboardKasir()
