@@ -129,6 +129,7 @@ class PembelianController extends Controller
                 'kode_batch' => $kodeBatch,
                 'stok_ekor' => $totalJumlahEkor,
                 'stok_kg' => $totalBerat,
+                'stok_ekor_minimal' => 50, // default minimal stok, bisa disesuaikan
             ]);
 
             //Buat detail pembelian (harga dan subtotal akan diisi saat pembayaran)
