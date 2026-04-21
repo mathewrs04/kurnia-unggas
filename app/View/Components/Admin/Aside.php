@@ -113,6 +113,14 @@ class Aside extends Component
                 "roles" => ['penanggung_jawab', 'kasir']
             ],
             [
+                "label" => "Setoran",
+                "icon" => "fas fa-cash-register",
+                "route_name" => "setoran.index",
+                "route_active" => "setoran.*",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab', 'kasir']
+            ],
+            [
                 "label" => "Stok Opname",
                 "icon" => "fas fa-clipboard-check",
                 "route_name" => "stok-opname.index",
@@ -187,6 +195,12 @@ class Aside extends Component
                         "icon" => "far fa-building",
                         "route_name" => "report.keuntungan.index",
                         "route_active" => "report.keuntungan.*",
+                    ],
+                    [
+                        "label" => "Laporan Setoran",
+                        "icon" => "far fa-building",
+                        "route_name" => "report.setoran.index",
+                        "route_active" => "report.setoran.*",
                     ]
                 ]
             ],

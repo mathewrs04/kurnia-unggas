@@ -18,6 +18,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\PeternakController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\StokOpnameController;
+use App\Http\Controllers\SetoranController;
 use App\Http\Controllers\LaporanKeuntunganController;
 use App\Http\Controllers\SusutBatchController;
 use App\Http\Controllers\TimbanganController;
@@ -173,11 +174,23 @@ Route::middleware('auth')->group(function () {
             Route::prefix('keuntungan')->as('keuntungan.')->controller(LaporanKeuntunganController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
             });
+            Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
+                Route::get('/', 'report')->name('index');
+            });
+        });
+
+        Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
+            Route::put('/{id}/approve', 'approve')->name('approve');
         });
     });
 
     // Route untuk Kasir dan Penanggung Jawab (Penjualan)
     Route::middleware(['role:kasir,penanggung_jawab'])->group(function () {
+        Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+        });
+
         Route::prefix('penjualan')->as('penjualan.')->controller(PenjualanController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/create', 'create')->name('create');
