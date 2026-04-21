@@ -41,6 +41,12 @@ class BatchPembelian extends Model
         return $this->hasMany(MortalitasAyam::class, 'batch_pembelian_id');
     }
 
+    // Relasi ke Penjualan Detail (one to many)
+    public function penjualanDetails()
+    {
+        return $this->hasMany(PenjualanDetail::class, 'batch_id');
+    }
+
     // Generate kode batch otomatis
     public static function kodeBatch()
     {
