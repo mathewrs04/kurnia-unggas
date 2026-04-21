@@ -53,17 +53,13 @@ class StokOpnameController extends Controller
             'keranjangs.*.berat_ayam.required'       => 'Berat ayam pada keranjang :index wajib diisi.',
         ]);
 
-       
-
-
+    
         DB::beginTransaction();
 
         try {
             $batch = BatchPembelian::findOrFail($data['batch_pembelian_id']);
 
-           
-
-            // 1. Hitung total jumlah ekor dan total berat dari keranjang
+            // Hitung total jumlah ekor dan total berat dari keranjang
             $totalJumlahEkor = 0;
             $totalBerat = 0;
 
@@ -88,7 +84,7 @@ class StokOpnameController extends Controller
             ]);
             $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
 
-            // 3. Simpan data keranjang
+            //Simpan data keranjang
             foreach ($request->keranjangs as $keranjangData) {
                 Keranjang::create([
                     'timbangan_id' => $timbangan->id,
@@ -101,7 +97,7 @@ class StokOpnameController extends Controller
 
             $susut = $batch->stok_kg - $totalBerat;
 
-            $stokOpname = StokOpname::create([
+            StokOpname::create([
                 'user_id' => auth()->id(),
                 'batch_pembelian_id' => $batch->id,
                 'timbangan_id' => $timbangan->id,
