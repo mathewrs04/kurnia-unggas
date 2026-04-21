@@ -199,7 +199,7 @@ class PenjualanController extends Controller
                     $hargaSatuan = $produkJasa->harga_satuan;
                     $subtotalItemJasa = $jumlahEkor * $hargaSatuan;
                     $subtotalJasa += $subtotalItemJasa;
-                   
+
 
                     $details[] = [
                         'produk_id' => $produkJasa->id,
@@ -219,7 +219,7 @@ class PenjualanController extends Controller
             }
 
             $subtotal = ($subtotalAyam + $subtotalJasa) - ($request->diskon ?? 0);
-            
+
             // Cek status pengiriman
             $status = $request->has('is_dikirim') ? Penjualan::STATUS_BELUM_DIKIRIM : Penjualan::STATUS_LANGSUNG;
 
@@ -274,22 +274,58 @@ class PenjualanController extends Controller
 
     public function show($id)
     {
-        $penjualan = Penjualan::with(['pelanggan', 'penjualanDetails.produk', 'penjualanDetails.batch', 'penjualanDetails.timbangan'])
+        $penjualan = Penjualan::with(['pelanggan', 'penjualanDetails.produk', 'penjualanDetails.batch'])
             ->findOrFail($id);
 
-        $detailsAyam = $penjualan->penjualanDetails->where('produk.tipe_produk', 'ayam_hidup');
-        $detailsJasa = $penjualan->penjualanDetails->where('produk.tipe_produk', 'jasa');
-        $totalSebelumDiskon = $penjualan->penjualanDetails->sum('subtotal');
-        $diskon = $totalSebelumDiskon - $penjualan->subtotal;
+        // Pisahkan detail ayam dan jasa
+        $detailsAyam = $penjualan->penjualanDetails->filter(function ($detail) {
+            return $detail->produk && $detail->produk->tipe_produk == 'ayam_hidup';
+        });
+        $detailsJasa = $penjualan->penjualanDetails->filter(function ($detail) {
+            return $detail->produk && $detail->produk->tipe_produk == 'jasa';
+        });
 
-        return view('penjualan.show', compact('penjualan', 'detailsAyam', 'detailsJasa', 'totalSebelumDiskon', 'diskon'));
+        // Hitung total ekor dan berat (untuk nota)
+        $totalEkor = $penjualan->penjualanDetails->sum('jumlah_ekor');
+        $totalBerat = $penjualan->penjualanDetails->sum('jumlah_berat');
+        $subtotalAyam = $detailsAyam->sum('subtotal');
+        $subtotalJasa = $detailsJasa->sum('subtotal');
+        $totalSebelumDiskon = $subtotalAyam + $subtotalJasa;
+        $diskon = $penjualan->diskon;
+
+        // Siapkan items untuk cetak struk
+        $printItems = $penjualan->penjualanDetails->map(function ($detail) {
+            $isJasa = $detail->produk && $detail->produk->tipe_produk == 'jasa';
+            return [
+                'nama_item' => $isJasa ? $detail->produk->nama_produk : ($detail->deskripsi ?: 'Ayam Hidup'),
+                'jumlah_ekor' => $detail->jumlah_ekor,
+                'jumlah_berat' => $detail->jumlah_berat ?? 0,
+                'harga_satuan' => $detail->harga_satuan,
+                'subtotal' => $detail->subtotal,
+                'satuan_harga' => $isJasa ? '/ekor' : '/kg',
+                'deskripsi' => $detail->deskripsi,
+            ];
+        });
+
+        return view('penjualan.show', compact(
+            'penjualan',
+            'detailsAyam',
+            'detailsJasa',
+            'totalEkor',
+            'totalBerat',
+            'subtotalAyam',
+            'subtotalJasa',
+            'totalSebelumDiskon',
+            'diskon',
+            'printItems'
+        ));
     }
 
     public function kirim($id)
     {
         try {
             $penjualan = Penjualan::findOrFail($id);
-            
+
             if ($penjualan->status === Penjualan::STATUS_BELUM_DIKIRIM) {
                 $penjualan->update([
                     'status' => Penjualan::STATUS_SUDAH_DIKIRIM
