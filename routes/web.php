@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/train', 'train')->name('train');
             Route::post('/generate', 'generate')->name('generate');
             Route::get('/data', 'data')->name('data');
+            Route::get('/evaluate', 'evaluate')->name('evaluate');
+            Route::get('/rekomendasi', 'rekomendasi')->name('rekomendasi');
         });
     });
 
