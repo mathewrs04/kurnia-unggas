@@ -3,12 +3,12 @@
 This is a starter template page. Use this page to start your new project from
 scratch. This page gets rid of all links and provides the needed markup only.
 -->
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kurnia Unggas</title>
+    <title>SIM Kurnia Unggas</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet"
@@ -30,7 +30,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <div class="wrapper">
 
         <!-- Navbar -->
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <nav class="main-header navbar navbar-expand navbar-warning navbar-light">
             <!-- Left navbar links -->
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -39,15 +39,17 @@ scratch. This page gets rid of all links and provides the needed markup only.
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="/dashboard" class="nav-link">Home</a>
-
+                </li>
             </ul>
 
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn text-danger">Logout</button>
-                </form>
+                <li class="nav-item">
+                    <form action="{{ route('logout') }}" method="POST" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn text-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    </form>
+                </li>
             </ul>
         </nav>
         <!-- /.navbar -->
@@ -90,11 +92,10 @@ scratch. This page gets rid of all links and provides the needed markup only.
         <footer class="main-footer">
             <!-- To the right -->
             <div class="float-right d-none d-sm-inline">
-                Anything you want
+                Sistem Informasi Manajemen
             </div>
             <!-- Default to the left -->
-            <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">AdminLTE.io</a>.</strong> All rights
-            reserved.
+            <strong>Copyright &copy; {{ date('Y') }} <a href="/dashboard" class="text-warning">SIM Kurnia Unggas</a>.</strong> Seluruh hak cipta dilindungi.
         </footer>
     </div>
     <!-- ./wrapper -->

@@ -34,55 +34,55 @@ class Aside extends Component
                 "dropdown" => [
                     [
                         "label" => "Pemasok",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-truck-loading",
                         "route_name" => "master.pemasok.index",
                         "route_active" => "master.pemasok.*",
                     ],
                     [
                         "label" => "Peternak",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-user-friends",
                         "route_name" => "master.peternak.index",
                         "route_active" => "master.peternak.*",
                     ],
                     [
                         "label" => "Batch Pembelian",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-tags",
                         "route_name" => "master.batch-pembelian.index",
                         "route_active" => "master.batch-pembelian.*",
                     ],
                     [
                         "label" => "Pelanggan",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-users",
                         "route_name" => "master.pelanggan.index",
                         "route_active" => "master.pelanggan.*",
                     ],
                     [
                         "label" => "Produk",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-box",
                         "route_name" => "master.produk.index",
                         "route_active" => "master.produk.*",
                     ],
                     [
                         "label" => "Metode Pembayaran",
-                        "icon" => "far fa-credit-card",
+                        "icon" => "fas fa-credit-card",
                         "route_name" => "master.metode-pembayaran.index",
                         "route_active" => "master.metode-pembayaran.*",
                     ],
                     [
                         "label" => "Holiday",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-calendar-alt",
                         "route_name" => "master.holiday.index",
                         "route_active" => "master.holiday.*",
                     ],
                     [
                         "label" => "Harga Ayam",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-money-bill-wave",
                         "route_name" => "master.harga-ayam.index",
                         "route_active" => "master.harga-ayam.*",
                     ],
                     [
                         "label" => "Karyawan",
-                        "icon" => "far fa-building",
+                        "icon" => "fas fa-id-badge",
                         "route_name" => "master.karyawan.index",
                         "route_active" => "master.karyawan.*",
                     ]
@@ -156,9 +156,17 @@ class Aside extends Component
                 "label" => "Forecast",
                 "icon" => "fas fa-chart-bar",
                 "route_name" => "forecast.index",
-                "route_active" => "forecast.*",
+                "route_active" => "forecast.index",
                 "is_dropdown" => false,
                 "roles" => ['pemilik', 'penanggung_jawab']
+            ],
+            [
+                "label" => "Rekomendasi Pembelian",
+                "icon" => "fas fa-chart-line",
+                "route_name" => "forecast.rekomendasi",
+                "route_active" => "forecast.rekomendasi",
+                "is_dropdown" => false,
+                "roles" => ['penanggung_jawab']
             ],
             [
                 "label" => "Report",
@@ -186,7 +194,7 @@ class Aside extends Component
         ];
 
         // Filter routes based on user role
-        $this->routes = collect($allRoutes)->filter(function($route) use ($user) {
+        $this->routes = collect($allRoutes)->filter(function ($route) use ($user) {
             return in_array($user->role, $route['roles']);
         })->values()->toArray();
     }
