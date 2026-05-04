@@ -34,4 +34,23 @@ class Peternak extends Model
     {
         return $this->hasMany(Pembelian::class);
     }
+
+    // Relasi ke Pembelian Detail (through Pembelian)
+    public function pembelianDetails()
+    {
+        return $this->hasManyThrough(
+            PembelianDetail::class,
+            Pembelian::class,
+            'peternak_id',
+            'pembelian_id',
+            'id',
+            'id'
+        );
+    }
+
+    // Relasi ke Pembelian Detail (has many through)
+    public function pembelianDetails()
+    {
+        return $this->hasManyThrough(PembelianDetail::class, Pembelian::class);
+    }
 }

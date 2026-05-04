@@ -65,4 +65,103 @@ class PemasokController extends Controller
         toast()->success('Data berhasil dihapus!');
         return redirect()->route('master.pemasok.index');
     }
+
+    public function laporan(Request $request)
+    {
+        $dariTanggal = $request->get('dari_tanggal', now()->startOfMonth()->toDateString());
+        $sampaiTanggal = $request->get('sampai_tanggal', now()->toDateString());
+
+        $pemasoks = Pemasok::with([
+            'peternaks' => function ($query) use ($dariTanggal, $sampaiTanggal) {
+                $query->withCount([
+                    'pembelians as pembelians_count' => function ($pembelianQuery) use ($dariTanggal, $sampaiTanggal) {
+                        $pembelianQuery
+                            ->whereDate('tanggal_pembelian', '>=', $dariTanggal)
+                            ->whereDate('tanggal_pembelian', '<=', $sampaiTanggal);
+                    }
+                ])->withSum([
+                    'pembelianDetails as pembelian_details_sum_subtotal' => function ($detailQuery) use ($dariTanggal, $sampaiTanggal) {
+                        $detailQuery->whereHas('pembelian', function ($pembelianQuery) use ($dariTanggal, $sampaiTanggal) {
+                            $pembelianQuery
+                                ->whereDate('tanggal_pembelian', '>=', $dariTanggal)
+                                ->whereDate('tanggal_pembelian', '<=', $sampaiTanggal);
+                        });
+                    }
+                ], 'subtotal')
+                    ->orderByDesc('pembelian_details_sum_subtotal')
+                    ->orderByDesc('pembelians_count')
+                    ->orderBy('nama');
+            }
+        ])
+            ->orderBy('nama_pabrik')
+            ->get();
+
+        $pemasoks = $pemasoks
+            ->map(function ($pemasok) {
+                $pemasok->total_peternak = $pemasok->peternaks->count();
+                $pemasok->total_pembelian = $pemasok->peternaks->sum('pembelians_count');
+                $pemasok->total_nominal = $pemasok->peternaks->sum('pembelian_details_sum_subtotal');
+                return $pemasok;
+            })
+            ->sortByDesc('total_nominal')
+            ->values();
+
+        $summary = [
+            'total_pemasok' => $pemasoks->count(),
+            'total_peternak' => $pemasoks->sum('total_peternak'),
+            'total_pembelian' => $pemasoks->sum('total_pembelian'),
+            'total_nominal' => $pemasoks->sum('total_nominal'),
+        ];
+
+        return view('report.pemasok-peternak', compact('pemasoks', 'dariTanggal', 'sampaiTanggal', 'summary'));
+    }
+
+    public function laporanPemasokPeternak(Request $request)
+    {
+        $dariTanggal = $request->get('dari_tanggal', now()->startOfMonth()->toDateString());
+        $sampaiTanggal = $request->get('sampai_tanggal', now()->toDateString());
+
+        $pemasoks = Pemasok::query()
+            ->whereHas('peternaks.pembelians', function ($query) use ($dariTanggal, $sampaiTanggal) {
+                $query->whereBetween('tanggal_pembelian', [$dariTanggal, $sampaiTanggal]);
+            })
+            ->with(['peternaks' => function ($query) use ($dariTanggal, $sampaiTanggal) {
+                $query->whereHas('pembelians', function ($subQuery) use ($dariTanggal, $sampaiTanggal) {
+                    $subQuery->whereBetween('tanggal_pembelian', [$dariTanggal, $sampaiTanggal]);
+                })
+                ->withCount(['pembelians as pembelians_count' => function ($subQuery) use ($dariTanggal, $sampaiTanggal) {
+                    $subQuery->whereBetween('tanggal_pembelian', [$dariTanggal, $sampaiTanggal]);
+                }])
+                ->withSum(['pembelianDetails as pembelian_details_sum_subtotal' => function ($subQuery) use ($dariTanggal, $sampaiTanggal) {
+                    $subQuery->whereBetween('pembelians.tanggal_pembelian', [$dariTanggal, $sampaiTanggal]);
+                }], 'subtotal')
+                ->orderByDesc('pembelian_details_sum_subtotal')
+                ->orderBy('nama');
+            }])
+            ->orderBy('nama_pabrik')
+            ->get();
+
+        $pemasoks->each(function ($pemasok) {
+            $pemasok->total_peternak = $pemasok->peternaks->count();
+            $pemasok->total_pembelian = $pemasok->peternaks->sum('pembelians_count');
+            $pemasok->total_nominal = $pemasok->peternaks->sum(function ($peternak) {
+                return $peternak->pembelian_details_sum_subtotal ?? 0;
+            });
+        });
+
+        $totalPemasok = $pemasoks->count();
+        $totalPeternak = $pemasoks->sum('total_peternak');
+        $totalPembelian = $pemasoks->sum('total_pembelian');
+        $totalNominal = $pemasoks->sum('total_nominal');
+
+        return view('report.pemasok-peternak', compact(
+            'pemasoks',
+            'dariTanggal',
+            'sampaiTanggal',
+            'totalPemasok',
+            'totalPeternak',
+            'totalPembelian',
+            'totalNominal'
+        ));
+    }
 }

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Produk;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ProdukSeeder extends Seeder
@@ -24,13 +23,13 @@ class ProdukSeeder extends Seeder
                 'nama_produk' => 'Jasa Pemotongan',
                 'tipe_produk' => 'jasa',
                 'satuan' => 'ekor',
-                'harga_satuan' => 5000,
+                'harga_satuan' => 2000,
             ],
             [
                 'nama_produk' => 'Jasa Pembubutan',
                 'tipe_produk' => 'jasa',
                 'satuan' => 'ekor',
-                'harga_satuan' => 7000,
+                'harga_satuan' => 1500,
             ],
         ]);
     }

@@ -7,14 +7,14 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class PenjualanAyamHarian2024Seeder extends Seeder
+class PenjualanAyamHarianSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-         // =========================
+        // =========================
         // HAPUS DATA LAMA
         // =========================
         DB::table('penjualan_ayam_harians')->truncate();

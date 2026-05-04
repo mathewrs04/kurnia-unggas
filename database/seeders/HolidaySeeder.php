@@ -12,7 +12,7 @@ class HolidaySeeder extends Seeder
      */
     public function run(): void
     {
-       // =========================
+        // =========================
         // HAPUS DATA LAMA
         // =========================
         DB::table('holidays')->truncate();

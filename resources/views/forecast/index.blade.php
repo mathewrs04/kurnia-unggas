@@ -123,8 +123,8 @@
                 datasets: [
                     { label: 'Aktual', data: aktual, borderColor: 'green', backgroundColor: 'rgba(40,167,69,0.1)', borderWidth: 2 },
                     { label: 'Prediksi', data: pred, borderColor: 'blue', backgroundColor: 'rgba(0,123,255,0.05)', borderWidth: 2 },
-                    { label: 'Min', data: min, borderColor: 'orange', borderDash: [5,5], pointRadius: 0, fill: false },
-                    { label: 'Max', data: max, borderColor: 'red', borderDash: [5,5], pointRadius: 0, fill: false }
+                    { label: 'Min', data: min, borderColor: 'orange', pointRadius: 0, fill: false },
+                    { label: 'Max', data: max, borderColor: 'red', pointRadius: 0, fill: false }
                 ]
             },
             options: { responsive: true, scales: { y: { beginAtZero: true } } }

@@ -171,11 +171,20 @@ Route::middleware('auth')->group(function () {
             Route::prefix('timbangan')->as('timbangan.')->controller(TimbanganController::class)->group(function () {
                 Route::get('/', 'laporan')->name('index');
             });
+            Route::prefix('pelanggan')->as('pelanggan.')->controller(PelangganController::class)->group(function () {
+                Route::get('/', 'laporan')->name('index');
+            });
+            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
+                Route::get('/', 'laporanPemasokPeternak')->name('index');
+            });
             Route::prefix('keuntungan')->as('keuntungan.')->controller(LaporanKeuntunganController::class)->group(function () {
                 Route::get('/', 'index')->name('index');
             });
             Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
                 Route::get('/', 'report')->name('index');
+            });
+            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
+                Route::get('/', 'laporan')->name('index');
             });
         });
 

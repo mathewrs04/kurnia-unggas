@@ -58,4 +58,16 @@ class PelangganController extends Controller
         toast()->success('Data berhasil dihapus!');
         return redirect()->route('master.pelanggan.index');
     }
+
+    public function laporan()
+    {
+        $pelanggans = Pelanggan::withCount('penjualans')
+            ->withSum('penjualans', 'subtotal')
+            ->orderByDesc('penjualans_sum_subtotal')
+            ->orderByDesc('penjualans_count')
+            ->orderBy('nama')
+            ->get();
+
+        return view('report.pelanggan', compact('pelanggans'));
+    }
 }

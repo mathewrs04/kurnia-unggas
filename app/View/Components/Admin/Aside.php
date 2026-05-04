@@ -15,6 +15,12 @@ class Aside extends Component
     public function __construct()
     {
         $user = auth()->user();
+                    ],
+                    [
+                        "label" => "Pemasok & Peternak",
+                        "icon" => "fas fa-truck-loading",
+                        "route_name" => "report.pemasok-peternak.index",
+                        "route_active" => "report.pemasok-peternak.*",
         $allRoutes = [
             [
                 "label" => "Dashboard",
@@ -201,6 +207,18 @@ class Aside extends Component
                         "icon" => "far fa-building",
                         "route_name" => "report.setoran.index",
                         "route_active" => "report.setoran.*",
+                    ],
+                    [
+                        "label" => "Laporan Pelanggan",
+                        "icon" => "far fa-building",
+                        "route_name" => "report.pelanggan.index",
+                        "route_active" => "report.pelanggan.*", 
+                    ],
+                    [
+                        "label" => "Laporan Pemasok - Peternak",
+                        "icon" => "far fa-building",
+                        "route_name" => "report.pemasok-peternak.index",
+                        "route_active" => "report.pemasok-peternak.*",
                     ]
                 ]
             ],

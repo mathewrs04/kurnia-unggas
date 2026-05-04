@@ -46,7 +46,6 @@ class ForecastSetup extends Command
         }
         
         DB::transaction(function () use ($rows) {
-            ForecastPenjualans::query()->delete();
             foreach ($rows as $r) {
                 ForecastPenjualans::create([
                     'tanggal' => $r['ds'],

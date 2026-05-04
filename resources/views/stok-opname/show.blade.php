@@ -2,9 +2,12 @@
 @section('content_title', 'Detail Stok Opname')
 @section('content')
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex align-items-center">
             <h4 class="card-title mb-0">Detail Stok Opname</h4>
-            <a href="{{ route('stok-opname.edit', $stokOpname->id) }}" class="btn btn-warning">Edit</a>
+            <div class="ml-auto d-flex align-items-center">
+                <a href="{{ route('stok-opname.edit', $stokOpname->id) }}" class="btn btn-warning text-white btn-sm mr-2">Edit</a>
+                <a href="{{ route('stok-opname.index') }}" class="btn btn-secondary btn-sm">Kembali</a>
+            </div>
         </div>
         <div class="card-body">
             <table class="table table-sm">
@@ -41,7 +44,6 @@
                     <td>{{ $stokOpname->catatan ?? '-' }}</td>
                 </tr>
             </table>
-            <a href="{{ route('stok-opname.index') }}" class="btn btn-default">Kembali</a>
         </div>
     </div>
 @endsection

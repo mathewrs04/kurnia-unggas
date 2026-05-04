@@ -30,7 +30,7 @@ class TrainForecastJob implements ShouldQueue
          $sales = DB::table('penjualan_ayam_harians')
             ->select('tanggal as ds', 'total_ekor as y')
             ->whereYear('tanggal', '>=', 2022)
-            ->whereYear('tanggal', '<=', 2024)
+            ->whereYear('tanggal', '<=', 2025)
             ->orderBy('tanggal')
             ->get();
 
