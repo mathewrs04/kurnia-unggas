@@ -47,10 +47,4 @@ class Peternak extends Model
             'id'
         );
     }
-
-    // Relasi ke Pembelian Detail (has many through)
-    public function pembelianDetails()
-    {
-        return $this->hasManyThrough(PembelianDetail::class, Pembelian::class);
-    }
 }

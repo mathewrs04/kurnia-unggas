@@ -15,12 +15,7 @@ class Aside extends Component
     public function __construct()
     {
         $user = auth()->user();
-                    ],
-                    [
-                        "label" => "Pemasok & Peternak",
-                        "icon" => "fas fa-truck-loading",
-                        "route_name" => "report.pemasok-peternak.index",
-                        "route_active" => "report.pemasok-peternak.*",
+                  
         $allRoutes = [
             [
                 "label" => "Dashboard",
