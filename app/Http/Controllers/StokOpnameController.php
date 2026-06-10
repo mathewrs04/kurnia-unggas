@@ -21,7 +21,7 @@ class StokOpnameController extends Controller
 
     public function create()
     {
-        $batches = BatchPembelian::orderBy('kode_batch')->get();
+        $batches = BatchPembelian::orderBy('kode_batch')->where('stok_ekor', '>', 0)->get();
         $karyawans = Karyawan::orderBy('nama')->get();
 
         return view('stok-opname.create', compact('batches', 'karyawans'));
@@ -33,7 +33,7 @@ class StokOpnameController extends Controller
             'batch_pembelian_id' => 'required|exists:batch_pembelians,id',
             'tanggal_opname' => 'required|date',
             'keranjangs' => 'required|array|min:1',
-            'keranjangs.*.jumlah_ekor' => 'required|integer|min:1',
+            'keranjangs.*.jumlah_ekor' => 'required|integer|min:1|max:20',
             'keranjangs.*.berat_keranjang' => 'required|numeric|min:0',
             'keranjangs.*.berat_total' => 'required|numeric|min:0',
             'keranjangs.*.berat_ayam' => 'required|numeric|min:0',
@@ -48,6 +48,7 @@ class StokOpnameController extends Controller
             'tanggal_opname.required'                => 'Tanggal opname wajib diisi.',
             'keranjangs.required'                    => 'Keranjang tidak boleh kosong.',
             'keranjangs.*.jumlah_ekor.required'      => 'Jumlah ekor pada keranjang :index wajib diisi.',
+            'keranjangs.*.jumlah_ekor.max'           => 'Jumlah ekor per keranjang maksimal 20 ekor.',
             'keranjangs.*.berat_keranjang.required'  => 'Berat keranjang pada keranjang :index wajib diisi.',
             'keranjangs.*.berat_total.required'      => 'Berat total pada keranjang :index wajib diisi.',
             'keranjangs.*.berat_ayam.required'       => 'Berat ayam pada keranjang :index wajib diisi.',
@@ -134,12 +135,20 @@ class StokOpnameController extends Controller
 
     public function edit($id)
     {
-        $stokOpname = StokOpname::findOrFail($id);
-        $batches = BatchPembelian::orderBy('kode_batch')->get();
-        $timbangans = Timbangan::orderBy('tanggal', 'desc')->get();
+        $stokOpname = StokOpname::with([
+            'timbangan.karyawans',
+            'timbangan.keranjangs',
+        ])->findOrFail($id);
+
+        // Sertakan batch aktif (stok > 0) PLUS batch yang sedang dipakai opname ini
+        $batches = BatchPembelian::where(function ($q) use ($stokOpname) {
+            $q->where('stok_ekor', '>', 0)
+              ->orWhere('id', $stokOpname->batch_pembelian_id);
+        })->orderBy('kode_batch')->get();
+
         $karyawans = Karyawan::orderBy('nama')->get();
 
-        return view('stok-opname.edit', compact('stokOpname', 'batches', 'timbangans', 'karyawans'));
+        return view('stok-opname.edit', compact('stokOpname', 'batches', 'karyawans'));
     }
 
     public function update(Request $request, $id)
@@ -148,7 +157,7 @@ class StokOpnameController extends Controller
             'batch_pembelian_id' => 'required|exists:batch_pembelians,id',
             'tanggal_opname' => 'required|date',
             'keranjangs' => 'required|array|min:1',
-            'keranjangs.*.jumlah_ekor' => 'required|integer|min:1',
+            'keranjangs.*.jumlah_ekor' => 'required|integer|min:1|max:20',
             'keranjangs.*.berat_keranjang' => 'required|numeric|min:0',
             'keranjangs.*.berat_total' => 'required|numeric|min:0',
             'keranjangs.*.berat_ayam' => 'required|numeric|min:0',
@@ -158,23 +167,73 @@ class StokOpnameController extends Controller
             'karyawan_ids.*'      => 'integer|exists:karyawans,id',
         ]);
 
-        DB::transaction(function () use ($id, $data) {
-            $stokOpname = StokOpname::findOrFail($id);
+        DB::transaction(function () use ($id, $data, $request) {
+            $stokOpname = StokOpname::with('timbangan')->findOrFail($id);
             $batch = BatchPembelian::findOrFail($data['batch_pembelian_id']);
 
+            $totalJumlahEkor = 0;
             $totalBerat = 0;
             foreach ($data['keranjangs'] as $keranjang) {
+                $totalJumlahEkor += $keranjang['jumlah_ekor'];
                 $totalBerat += $keranjang['berat_ayam'];
+            }
+
+            if ($totalBerat != $data['jumlah_berat_aktual']) {
+                throw new Exception('Jumlah berat aktual tidak sesuai dengan total berat dari keranjang.');
+            }
+
+            // Validasi ekor: bandingkan dengan stok_ekor_sistem (nilai saat opname dibuat),
+            // bukan batch->stok_ekor yang mungkin sudah berubah (misal sudah terjual habis)
+            if ($stokOpname->stok_ekor_sistem != $totalJumlahEkor) {
+                throw new Exception('Jumlah ekor tidak sesuai dengan catatan sistem saat opname (' . $stokOpname->stok_ekor_sistem . ' ekor).');
+            }
+
+            // ── RESTORE stok_kg batch lama sebelum dikalkulasi ulang ──
+            // stok_kg_sistem menyimpan nilai stok_kg sebelum opname ini dibuat
+            $oldBatchId = $stokOpname->batch_pembelian_id;
+            BatchPembelian::where('id', $oldBatchId)->update([
+                'stok_kg' => $stokOpname->stok_kg_sistem,
+            ]);
+
+            // Refresh agar nilai stok_kg terupdate jika batch sama
+            $batch->refresh();
+
+            // Update Timbangan & Keranjangs
+            if ($stokOpname->timbangan_id) {
+                $timbangan = $stokOpname->timbangan;
+                $timbangan->update([
+                    'tanggal'           => $data['tanggal_opname'],
+                    'total_jumlah_ekor' => $totalJumlahEkor,
+                    'total_berat'       => $data['jumlah_berat_aktual'],
+                ]);
+                $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
+
+                // Hapus keranjang lama, buat yang baru
+                $timbangan->keranjangs()->delete();
+                foreach ($data['keranjangs'] as $keranjangData) {
+                    Keranjang::create([
+                        'timbangan_id'    => $timbangan->id,
+                        'jumlah_ekor'     => $keranjangData['jumlah_ekor'],
+                        'berat_keranjang' => $keranjangData['berat_keranjang'],
+                        'berat_total'     => $keranjangData['berat_total'],
+                        'berat_ayam'      => $keranjangData['berat_ayam'],
+                    ]);
+                }
             }
 
             $susut = $batch->stok_kg - $totalBerat;
 
             $stokOpname->update([
                 'batch_pembelian_id' => $batch->id,
-                'tanggal_opname' => $data['tanggal_opname'],
-                'stok_kg_sistem' => $batch->stok_kg,
-                'berat_aktual_kg' => $totalBerat,
-                'susut_kg' => $susut,
+                'tanggal_opname'     => $data['tanggal_opname'],
+                'stok_ekor_sistem'   => $batch->stok_ekor,
+                'stok_kg_sistem'     => $batch->stok_kg,
+                'berat_aktual_kg'    => $totalBerat,
+                'susut_kg'           => $susut,
+            ]);
+
+            BatchPembelian::where('id', $batch->id)->update([
+                'stok_kg' => $totalBerat,
             ]);
         });
 

@@ -22,7 +22,7 @@ class FormMortalitas extends Component
 
     public function __construct($id = null)
     {
-        $this->batch = BatchPembelian::all();
+        $this->batch = BatchPembelian::where('stok_ekor', '>', 0)->get();
         if ($id) {
             $mortalitas = MortalitasAyam::find($id);
             $this->id = $mortalitas->id;

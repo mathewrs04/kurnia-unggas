@@ -42,7 +42,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm">
+                <table class="table table-bordered table-hover table-sm text-nowrap">
                     <thead class="thead-light">
                         <tr>
                             <th class="text-center" width="5%">No</th>
@@ -50,7 +50,11 @@
                             <th class="text-right">Total Penjualan</th>
                             <th class="text-right">Total Pembelian</th>
                             <th class="text-right">Biaya Operasional</th>
-                            <th class="text-right">Laba / Rugi</th>
+                            <th class="text-right">Rugi Susut DO</th>
+                            <th class="text-right">Rugi Susut Opname</th>
+                            <th class="text-right">Rugi Mortalitas</th>
+                            <th class="text-right">Rugi Susut (Batch Selesai)</th>
+                            <th class="text-right">Laba / Rugi Bersih</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -60,7 +64,13 @@
                                 <td>{{ $row['nama_bulan'] }}</td>
                                 <td class="text-right">Rp {{ number_format($row['total_penjualan'], 0, ',', '.') }}</td>
                                 <td class="text-right">Rp {{ number_format($row['total_pembelian'], 0, ',', '.') }}</td>
-                                <td class="text-right">Rp {{ number_format($row['total_biaya_operasional'], 0, ',', '.') }}</td>
+                                <td class="text-right">Rp {{ number_format($row['total_biaya_operasional'], 0, ',', '.') }}
+                                </td>
+                                <td class="text-right">Rp {{ number_format($row['rugi_susut_do'], 0, ',', '.') }}</td>
+                                <td class="text-right">Rp {{ number_format($row['rugi_susut_opname'], 0, ',', '.') }}</td>
+                                <td class="text-right">Rp {{ number_format($row['rugi_mortalitas'], 0, ',', '.') }}</td>
+                                <td class="text-right">Rp {{ number_format($row['rugi_susut_keseluruhan'], 0, ',', '.') }}
+                                </td>
                                 <td class="text-right font-weight-bold">
                                     @if ($row['laba_rugi'] >= 0)
                                         <span class="text-success">
@@ -81,6 +91,10 @@
                             <td class="text-right">Rp {{ number_format($grandTotalPenjualan, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($grandTotalPembelian, 0, ',', '.') }}</td>
                             <td class="text-right">Rp {{ number_format($grandTotalBiayaOperasional, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($grandRugiSusutDO, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($grandRugiSusutOpname, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($grandRugiMortalitas, 0, ',', '.') }}</td>
+                            <td class="text-right">Rp {{ number_format($grandRugiSusutKeseluruhan, 0, ',', '.') }}</td>
                             <td class="text-right">
                                 @if ($grandLabaRugi >= 0)
                                     <span class="text-success">
@@ -98,9 +112,9 @@
             </div>
 
             {{-- Summary Cards --}}
-            <div class="row mt-3">
-                <div class="col-md-3">
-                    <div class="info-box bg-success">
+            <div class="row mt-4">
+                <div class="col-md-3 mb-3">
+                    <div class="info-box bg-success h-100">
                         <span class="info-box-icon"><i class="fas fa-shopping-cart"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total Penjualan</span>
@@ -108,31 +122,40 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="info-box bg-warning">
-                        <span class="info-box-icon"><i class="fas fa-boxes"></i></span>
-                        <div class="info-box-content">
-                            <span class="info-box-text">Total Pembelian</span>
-                            <span class="info-box-number">Rp {{ number_format($grandTotalPembelian, 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="info-box bg-secondary">
+                <div class="col-md-3 mb-3">
+                    <div class="info-box bg-secondary h-100">
                         <span class="info-box-icon"><i class="fas fa-file-invoice-dollar"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Biaya Operasional</span>
-                            <span class="info-box-number">Rp {{ number_format($grandTotalBiayaOperasional, 0, ',', '.') }}</span>
+                            <span class="info-box-number">Rp
+                                {{ number_format($grandTotalBiayaOperasional, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="info-box {{ $grandLabaRugi >= 0 ? 'bg-primary' : 'bg-danger' }}">
+                <div class="col-md-3 mb-3">
+                    <div class="info-box bg-danger h-100">
+                        <span class="info-box-icon"><i class="fas fa-arrow-down"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Kerugian (Susut & Mati)</span>
+                            @php
+                                $totalKerugian =
+                                    $grandRugiSusutDO +
+                                    $grandRugiSusutOpname +
+                                    $grandRugiMortalitas +
+                                    $grandRugiSusutKeseluruhan;
+                            @endphp
+                            <span class="info-box-number">Rp {{ number_format($totalKerugian, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="info-box {{ $grandLabaRugi >= 0 ? 'bg-primary' : 'bg-danger' }} h-100">
                         <span class="info-box-icon">
                             <i class="fas {{ $grandLabaRugi >= 0 ? 'fa-chart-line' : 'fa-chart-line' }}"></i>
                         </span>
                         <div class="info-box-content">
-                            <span class="info-box-text">{{ $grandLabaRugi >= 0 ? 'Total Laba' : 'Total Rugi' }}</span>
+                            <span
+                                class="info-box-text">{{ $grandLabaRugi >= 0 ? 'Total Laba Bersih' : 'Total Rugi Bersih' }}</span>
                             <span class="info-box-number">
                                 @if ($grandLabaRugi >= 0)
                                     Rp {{ number_format($grandLabaRugi, 0, ',', '.') }}

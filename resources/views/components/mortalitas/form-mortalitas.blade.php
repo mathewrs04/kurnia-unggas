@@ -4,7 +4,7 @@
         {{ $id ? 'Edit' : 'Tambah Mortalitas' }}
     </button>
     <div class="modal fade" id="formMortalitas{{ $id ?? '' }}">
-        <form action="{{ route('mortalitas-ayam.store') }}" method="POST">
+        <form action="{{ $id ? route('mortalitas-ayam.update', $id) : route('mortalitas-ayam.store') }}" method="POST">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -15,6 +15,9 @@
                     </div>
                     <div class="modal-body">
                         @csrf
+                        @if($id)
+                            @method('PUT')
+                        @endif
                         <input type="hidden" name="id" value="{{ $id ?? '' }}">
                         <div class="row">
                             <div class="col-md-4">
@@ -39,7 +42,7 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label>Jumlah Ekor Mati</label>
+                                    <label>Jumlah Ayam (Ekor) Mati</label>
                                     <input type="number" name="jumlah_ekor" class="form-control" min="1"
                                         value="{{ old('jumlah_ekor', $jumlah_ekor ?? '') }}" required>
                                 </div>

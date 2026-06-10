@@ -23,7 +23,7 @@
                         <th>No</th>
                         <th>Tanggal</th>
                         <th>Batch</th>
-                        <th>Jumlah Ekor</th>
+                        <th>Jumlah Ayam (Ekor)</th>
                         <th>Berat (kg)</th>
                         <th>Catatan</th>
                         <th>Sisa Stok Ekor</th>

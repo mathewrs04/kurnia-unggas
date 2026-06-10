@@ -84,7 +84,7 @@
                                         <td>: {{ \Carbon\Carbon::parse($detail->timbangan->tanggal)->format('d F Y') }}</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Total Jumlah Ekor</strong></td>
+                                        <td><strong>Total Jumlah Ayam (Ekor)</strong></td>
                                         <td>: {{ number_format($detail->timbangan->total_jumlah_ekor ?? 0) }} ekor</td>
                                     </tr>
                                     <tr>
@@ -169,7 +169,7 @@
                                 <thead class="thead-dark">
                                     <tr>
                                         <th width="80" class="text-center">No</th>
-                                        <th class="text-center">Jumlah Ekor</th>
+                                        <th class="text-center">Jumlah Ayam (Ekor)</th>
                                         <th class="text-center">Berat Ayam (kg)</th>
                                         
                                     </tr>
@@ -216,8 +216,8 @@
                                 @if($pembelian->status == \App\Models\Pembelian::STATUS_SUDAH_BAYAR)
                                     <table class="table table-sm table-borderless">
                                         <tr>
-                                            <td width="180"><strong>Berat Total</strong></td>
-                                            <td>: {{ number_format($detail->timbangan->total_berat ?? 0, 2) }} kg</td>
+                                            <td width="180"><strong>Berat Total DO</strong></td>
+                                            <td>: {{ number_format($detail->deliveryOrder->total_berat ?? 0, 2) }} kg</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Harga per Kg</strong></td>

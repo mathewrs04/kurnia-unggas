@@ -51,7 +51,7 @@
                                         <button type="button" class="btn btn-success btn-sm me-2" 
                                                 data-toggle="modal" 
                                                 data-target="#modalBayar" 
-                                                onclick="setBayarData({{ $item->id }}, '{{ $item->kode_pembelian }}', {{ $item->pembelianDetails->first()->timbangan->total_berat ?? 0 }})">
+                                                onclick="setBayarData({{ $item->id }}, '{{ $item->kode_pembelian }}', {{ $item->pembelianDetails->first()->deliveryOrder->total_berat ?? 0 }})">
                                             <i class="fas fa-money-bill"></i> Bayar
                                         </button>
                                     @endif
@@ -103,7 +103,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="total_berat_display">Total Berat(Kg)</label>
+                                    <label for="total_berat_display">Total Berat DO(Kg)</label>
                                     <input type="text" id="total_berat_display" class="form-control" readonly>
                                 </div>
                             </div>

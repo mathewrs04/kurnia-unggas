@@ -6,6 +6,7 @@ use App\Models\BatchPembelian;
 use App\Models\Penjualan;
 use App\Models\Pembelian;
 use App\Models\BiayaOperasional;
+use App\Models\Setting;
 
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -55,17 +56,25 @@ class DashboardController extends Controller
             ->get();
 
         // Data grafik pembelian per bulan (6 bulan terakhir)
-        $grafikPembelian = Pembelian::select(
-            DB::raw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') as bulan")
-        )
-            ->with('pembelianDetails')
+        $pembelians = Pembelian::with('pembelianDetails')
             ->where('tanggal_pembelian', '>=', Carbon::now()->subMonths(6))
-            ->get()
-            ->groupBy('bulan')
-            ->map(fn($items) => [
-                'bulan' => $items[0]->bulan,
-                'total' => $items->sum(fn($pembelian) => $pembelian->pembelianDetails->sum('subtotal'))
-            ])
+            ->get();
+
+        $grafikPembelian = $pembelians
+            ->groupBy(function ($p) {
+                return Carbon::parse($p->tanggal_pembelian)->format('Y-m');
+            })
+            ->map(function ($items, $bulan) {
+                $total = $items->sum(function ($pembelian) {
+                    return $pembelian->pembelianDetails->sum('subtotal');
+                });
+
+                return [
+                    'bulan' => $bulan,
+                    'total' => (int) $total,
+                ];
+            })
+            ->sortBy('bulan')
             ->values();
 
         return view('dashboard.pemilik', compact(
@@ -80,17 +89,12 @@ class DashboardController extends Controller
 
     private function dashboardPenanggungJawab()
     {
-        $adaBatchAman = BatchPembelian::whereColumn('stok_ekor', '>', 'stok_ekor_minimal')->exists();
-        $batchesKritis = BatchPembelian::whereColumn('stok_ekor', '<=', 'stok_ekor_minimal')
-            ->where('stok_ekor', '>', 0)
-            ->get();
-
-        if (!$adaBatchAman && $batchesKritis->count()) {
-            $pesan = 'Perhatian! Stok batch berikut sudah mencapai batas minimal: ';
-            foreach ($batchesKritis as $b) {
-                $pesan .= $b->kode_batch . ' (sisa ' . $b->stok_ekor . ' ekor), ';
-            }
-            session()->flash('warning', rtrim($pesan, ', '));
+        // Peringatan stok minimal global
+        $totalStokEkor = BatchPembelian::where('stok_ekor', '>', 0)->sum('stok_ekor');
+        $stokMinimalGlobal = (int) Setting::get('stok_minimal_global', 0);
+        if ($stokMinimalGlobal > 0 && $totalStokEkor < $stokMinimalGlobal) {
+            session()->flash('warning_stok_global',
+                'Peringatan! Total stok ayam (' . number_format($totalStokEkor) . ' ekor) berada di bawah batas minimal global (' . number_format($stokMinimalGlobal) . ' ekor).');
         }
 
         // Data grafik penjualan per bulan (6 bulan terakhir)
@@ -104,17 +108,25 @@ class DashboardController extends Controller
             ->get();
 
         // Data grafik pembelian per bulan (6 bulan terakhir)
-        $grafikPembelian = Pembelian::select(
-            DB::raw("DATE_FORMAT(tanggal_pembelian, '%Y-%m') as bulan")
-        )
-            ->with('pembelianDetails')
+        $pembelians = Pembelian::with('pembelianDetails')
             ->where('tanggal_pembelian', '>=', Carbon::now()->subMonths(6))
-            ->get()
-            ->groupBy('bulan')
-            ->map(fn($items) => [
-                'bulan' => $items[0]->bulan,
-                'total' => $items->sum(fn($pembelian) => $pembelian->pembelianDetails->sum('subtotal'))
-            ])
+            ->get();
+
+        $grafikPembelian = $pembelians
+            ->groupBy(function ($p) {
+                return Carbon::parse($p->tanggal_pembelian)->format('Y-m');
+            })
+            ->map(function ($items, $bulan) {
+                $total = $items->sum(function ($pembelian) {
+                    return $pembelian->pembelianDetails->sum('subtotal');
+                });
+
+                return [
+                    'bulan' => $bulan,
+                    'total' => (int) $total,
+                ];
+            })
+            ->sortBy('bulan')
             ->values();
 
         return view('dashboard.penanggung-jawab', compact(

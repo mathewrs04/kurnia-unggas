@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\MetodePembayaran;
 
 class PenjualanDetail extends Model
 {
@@ -11,17 +12,24 @@ class PenjualanDetail extends Model
         'produk_id',
         'batch_id',
         'timbangan_id',
+        'tipe_penjualan',
         'deskripsi',
         'jumlah_ekor',
         'jumlah_berat',
         'harga_satuan',
-        'subtotal'
+        'subtotal',
+        'metode_pembayaran_id',
     ];
 
     // Relationships
     public function penjualan()
     {
         return $this->belongsTo(Penjualan::class);
+    }
+
+    public function metodePembayaran()
+    {
+        return $this->belongsTo(MetodePembayaran::class, 'metode_pembayaran_id');
     }
 
     public function produk()

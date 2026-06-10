@@ -183,7 +183,7 @@ class Aside extends Component
                 "route_name" => "#",
                 "route_active" => "report.*",
                 "is_dropdown" => true,
-                "roles" => ['penanggung_jawab'],
+                "roles" => ['pemilik', 'penanggung_jawab'],
                 "dropdown" => [
                     [
                         "label" => "Timbangan",
@@ -216,6 +216,14 @@ class Aside extends Component
                         "route_active" => "report.pemasok-peternak.*",
                     ]
                 ]
+            ],
+            [
+                "label"        => "Pengaturan",
+                "icon"         => "fas fa-cog",
+                "route_name"   => "setting.index",
+                "route_active" => "setting.*",
+                "is_dropdown"  => false,
+                "roles"        => ['penanggung_jawab']
             ],
 
         ];

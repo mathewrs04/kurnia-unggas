@@ -6,19 +6,10 @@
             <h4 class="card-title">Data Pemasok</h4>
         </div>
         <div class="card-body">
-            @if ($errors->any())
-                <div class="alert alert-danger d-flex flex-column">
-                    <ul>
-                        @foreach ($errors->all() as $error)
-                            <small class="text-white my-2">{{ $error }}</small>
-                        @endforeach
-                    </ul>
-                </div>
-
-            @endif
-            <div>
+            <div class="mb-3">
                 <x-pemasok.form-pemasok />
             </div>
+            <x-alert :errors="$errors" />
             <table class="table table-sm" id="table1">
                 <thead>
                     <tr>

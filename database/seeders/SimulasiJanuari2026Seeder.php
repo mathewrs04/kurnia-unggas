@@ -30,7 +30,6 @@ class SimulasiJanuari2026Seeder extends Seeder
     private int $pembelianSequence = 1;
     private int $notaSequence = 1;
 
-    /** @var array<string, array{eceran:int, partai:int}> */
     private array $hargaByDate = [];
 
     public function run(): void
@@ -81,9 +80,6 @@ class SimulasiJanuari2026Seeder extends Seeder
         });
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     private function prepareMasterData(): array
     {
         $user = User::first();
@@ -232,15 +228,14 @@ class SimulasiJanuari2026Seeder extends Seeder
         }
     }
 
-    /** @return Carbon[] */
     private function generatePurchaseDates(): array
     {
         $dates = [];
         $date = Carbon::create(2026, 1, 1);
 
-        for ($i = 0; $i < 12; $i++) {
+        while ($date->month === 1 && $date->year === 2026) {
             $dates[] = $date->copy();
-            $date->addDays($i % 2 === 0 ? 2 : 3);
+            $date->addDays(random_int(2, 3));
         }
 
         return $dates;
@@ -255,7 +250,7 @@ class SimulasiJanuari2026Seeder extends Seeder
         int $userId
     ): int {
         $peternakId = $peternakIds[array_rand($peternakIds)];
-        $targetEkor = [180, 200, 200, 200, 220][array_rand([0, 1, 2, 3, 4])];
+        $targetEkor = [200, 200, 200, 200, 200][array_rand([0, 1, 2, 3, 4])];
 
         $purchaseCrates = $this->buildCrates($targetEkor, 2.0, 2.3);
         $totalEkor = array_sum(array_column($purchaseCrates, 'jumlah_ekor'));
@@ -305,7 +300,6 @@ class SimulasiJanuari2026Seeder extends Seeder
             'stok_ekor' => $totalEkor,
             'stok_kg' => $totalBeratAyam,
             'stok_ekor_minimal' => 50,
-            'user_id' => $userId,
         ]);
 
         DB::table('pembelian_details')->insert([
@@ -352,7 +346,7 @@ class SimulasiJanuari2026Seeder extends Seeder
         array $jasaProdukIds,
         int $userId
     ): void {
-        $trxCount = random_int(18, 22);
+        $trxCount = 20;
 
         for ($i = 0; $i < $trxCount; $i++) {
             $batch = BatchPembelian::query()->where('stok_ekor', '>', 0)->orderBy('id')->first();
@@ -360,8 +354,8 @@ class SimulasiJanuari2026Seeder extends Seeder
                 break;
             }
 
-            $isPartai = random_int(1, 100) <= 10;
-            $targetEkor = $isPartai ? random_int(10, 20) : random_int(1, 3);
+            $isPartai = random_int(1, 100) <= 25;
+            $targetEkor = $isPartai ? random_int(10, 20) : random_int(1, 2);
             $ekor = min($targetEkor, (int) $batch->stok_ekor);
 
             if ($ekor < 1) {
@@ -372,7 +366,7 @@ class SimulasiJanuari2026Seeder extends Seeder
                 $isPartai = false;
             }
 
-            $avgKgPerEkor = $this->randomFloat(1.95, 2.1, 3);
+            $avgKgPerEkor = $this->randomFloat(2.0, 2.3, 3);
             $berat = round($ekor * $avgKgPerEkor, 2);
             $berat = min($berat, (float) $batch->stok_kg);
 
@@ -436,7 +430,7 @@ class SimulasiJanuari2026Seeder extends Seeder
 
             $diskon = random_int(1, 100) <= 20 ? random_int(1000, 5000) : 0;
             $totalSubtotal = max(0, $subtotalAyam + $subtotalJasa - $diskon);
-            $status = random_int(1, 100) <= 15 && $ekor >= 2
+            $status = $isPartai
                 ? Penjualan::STATUS_BELUM_DIKIRIM
                 : Penjualan::STATUS_LANGSUNG;
 
@@ -557,7 +551,6 @@ class SimulasiJanuari2026Seeder extends Seeder
         }
     }
 
-    /** @param int[] $batchIds */
     private function seedOccasionalMortalitas(array $batchIds, int $userId): void
     {
         if (empty($batchIds)) {
@@ -603,9 +596,6 @@ class SimulasiJanuari2026Seeder extends Seeder
         }
     }
 
-    /**
-     * @return array<int, array{jumlah_ekor:int, berat_ayam:float, berat_total:float}>
-     */
     private function buildCrates(int $jumlahEkor, float $minKgPerEkor, float $maxKgPerEkor): array
     {
         $remaining = $jumlahEkor;
@@ -628,9 +618,6 @@ class SimulasiJanuari2026Seeder extends Seeder
         return $crates;
     }
 
-    /**
-     * @return array<int, array{jumlah_ekor:int, berat_ayam:float, berat_total:float}>
-     */
     private function buildCratesFromActualWeight(int $jumlahEkor, float $totalActualKg): array
     {
         $remainingEkor = $jumlahEkor;
@@ -660,10 +647,6 @@ class SimulasiJanuari2026Seeder extends Seeder
         return $crates;
     }
 
-    /**
-     * @param int[] $source
-     * @return int[]
-     */
     private function pickRandomSubset(array $source, int $min, int $max): array
     {
         if (empty($source)) {

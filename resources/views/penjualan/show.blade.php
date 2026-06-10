@@ -76,10 +76,8 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Deskripsi</th>
                                     <th>Batch</th>
-
-                                    <th>Jumlah Ekor</th>
+                                    <th>Jumlah Ayam (Ekor)</th>
                                     <th>Berat (kg)</th>
                                     <th>Harga per Kg</th>
                                     <th>Subtotal</th>
@@ -89,12 +87,9 @@
                                 @foreach ($detailsAyam as $detail)
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $detail->deskripsi }}</td>
                                         <td>{{ $detail->batch ? $detail->batch->kode_batch : '-' }}</td>
-
                                         <td>{{ number_format($detail->jumlah_ekor) }}</td>
-                                        <td>{{ $detail->jumlah_berat ? number_format($detail->jumlah_berat, 2) : '-' }}
-                                        </td>
+                                        <td>{{ $detail->jumlah_berat ? number_format($detail->jumlah_berat, 2) : '-' }}</td>
                                         <td>Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
                                         <td>Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
                                     </tr>
@@ -102,7 +97,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th colspan="3  " class="text-right">Total Ayam</th>
+                                    <th colspan="2" class="text-right">Total Ayam</th>
                                     <th>{{ number_format($detailsAyam->sum('jumlah_ekor')) }} ekor</th>
                                     <th>{{ number_format($detailsAyam->sum('jumlah_berat'), 2) }} kg</th>
                                     <th></th>
@@ -129,7 +124,7 @@
                                     <th>No</th>
                                     <th>Produk Jasa</th>
                                     <th>Deskripsi</th>
-                                    <th>Jumlah Ekor</th>
+                                    <th>Jumlah Ayam (Ekor)</th>
                                     <th>Harga per Ekor</th>
                                     <th>Subtotal</th>
                                 </tr>
@@ -242,7 +237,7 @@
 
         <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
 
-        <div><strong>Total Ekor:</strong> {{ number_format($totalEkorPrint) }} ekor</div>
+    
         @if ($totalBeratPrint > 0)
             <div><strong>Total Berat:</strong> {{ number_format($totalBeratPrint, 2) }} kg</div>
         @endif
@@ -257,7 +252,7 @@
         <div><strong>TOTAL: Rp {{ number_format($penjualan->subtotal, 0, ',', '.') }}</strong></div>
 
         <div class="text-center" style="margin-top: 8px;">
-            Terima Kasih<br>Barang yang dibeli tidak dapat ditukar
+            Terima Kasih
         </div>
     </div>
 

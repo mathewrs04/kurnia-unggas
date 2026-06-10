@@ -28,7 +28,8 @@ class GeneratePenjualanHarian extends Command
     {
         $data = DB::table('penjualans')
             ->join('penjualan_details', 'penjualans.id', '=', 'penjualan_details.penjualan_id')
-            ->where('penjualan_details.produk_id', 1) // ayam
+            ->join('produks', 'penjualan_details.produk_id', '=', 'produks.id')
+            ->where('produks.tipe_produk', 'ayam_hidup')
             ->selectRaw('
                 DATE(tanggal_jual) as tanggal,
                 SUM(jumlah_ekor) as total_ekor

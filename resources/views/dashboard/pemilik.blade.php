@@ -127,27 +127,38 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Data untuk grafik penjualan
+    const rawLabelsPenjualan = {!! json_encode($grafikPenjualan->pluck('bulan')) !!};
+    const labelsPenjualan = rawLabelsPenjualan.map(b => new Date(b + '-01').toLocaleString('id-ID', { month: 'short', year: 'numeric' }));
     const dataPenjualan = {
-        labels: {!! json_encode($grafikPenjualan->pluck('bulan')) !!},
+        labels: labelsPenjualan,
         datasets: [{
             label: 'Penjualan',
             data: {!! json_encode($grafikPenjualan->pluck('total')) !!},
             backgroundColor: 'rgba(40, 167, 69, 0.2)',
             borderColor: 'rgba(40, 167, 69, 1)',
             borderWidth: 2,
+            pointRadius: 3,
             fill: true
         }]
     };
 
     // Data untuk grafik pembelian
+    const rawLabelsPembelian = {!! json_encode($grafikPembelian->pluck('bulan')) !!};
+    const labelsPembelian = rawLabelsPembelian.map(b => new Date(b + '-01').toLocaleString('id-ID', { month: 'short', year: 'numeric' }));
+    const rawDataPembelian = {!! json_encode($grafikPembelian->pluck('total')) !!};
+    const dataPembelianArray = rawDataPembelian.map(n => {
+        const cleaned = String(n).replace(/[^0-9\-\.]/g, '');
+        return cleaned === '' ? 0 : Number(cleaned);
+    });
     const dataPembelian = {
-        labels: {!! json_encode($grafikPembelian->pluck('bulan')) !!},
+        labels: labelsPembelian,
         datasets: [{
             label: 'Pembelian',
-            data: {!! json_encode($grafikPembelian->pluck('total')) !!},
+            data: dataPembelianArray,
             backgroundColor: 'rgba(255, 193, 7, 0.2)',
             borderColor: 'rgba(255, 193, 7, 1)',
             borderWidth: 2,
+            pointRadius: 3,
             fill: true
         }]
     };
@@ -159,6 +170,12 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {

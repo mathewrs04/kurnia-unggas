@@ -6,8 +6,7 @@
             <h4 class="card-title">Data Peternak</h4>
         </div>
         <div class="card-body">
-           
-            <div>
+            <div class="mb-3">
                 <x-peternak.form-peternak />
             </div>
             <x-alert :errors="$errors" />

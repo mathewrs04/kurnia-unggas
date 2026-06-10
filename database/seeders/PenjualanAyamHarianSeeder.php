@@ -14,14 +14,12 @@ class PenjualanAyamHarianSeeder extends Seeder
      */
     public function run(): void
     {
-        // =========================
-        // HAPUS DATA LAMA
-        // =========================
+ 
+        // hapus data lama
+
         DB::table('penjualan_ayam_harians')->truncate();
 
-        // =========================
-        // DATA LEBARAN TIAP TAHUN
-        // =========================
+        
         $lebaranDates = [
             2022 => '2022-05-02',
             2023 => '2023-04-22',
@@ -29,9 +27,7 @@ class PenjualanAyamHarianSeeder extends Seeder
             2025 => '2025-03-31',
         ];
 
-        // =========================
-        // LOOP TIAP TAHUN
-        // =========================
+        
         foreach ($lebaranDates as $year => $lebaranDate) {
 
             $start = Carbon::create($year,1,1);
@@ -44,39 +40,20 @@ class PenjualanAyamHarianSeeder extends Seeder
                 $tanggal = $start->copy();
                 $totalEkor = 0;
 
-                // ======================
-                // LEBARAN
-                // ======================
-                if ($tanggal->between(
-                    $lebaran->copy()->subDays(3),
-                    $lebaran->copy()->subDay()
-                )) {
-
+                // lebaran
+                if ($tanggal->between( $lebaran->copy()->subDays(3), $lebaran->copy()->subDay())) {
                     $totalEkor = rand(400,600);
-
-                } elseif ($tanggal->between(
-                    $lebaran,
-                    $lebaran->copy()->addDays(6)
+                } elseif ($tanggal->between( $lebaran, $lebaran->copy()->addDays(6)
                 )) {
-
-                    $totalEkor = 0;
-
-                // ======================
-                // TAHUN BARU
-                // ======================
-                } elseif ($tanggal->between(
-                    $tahunBaru->copy()->subDays(2),
-                    $tahunBaru->copy()->subDay()
-                )) {
-
+                    $totalEkor = 0;                
+                } // tahun baru 
+                elseif ($tanggal->between( Carbon::create($year, 1, 1), Carbon::create($year, 1, 2))) {
+                    $totalEkor = 0;           
+                } // sebelum tahun baru
+                elseif ($tanggal->between( $tahunBaru->copy()->subDays(2), $tahunBaru->copy()->subDay() )) {
                     $totalEkor = rand(300,400);
-
-                // ======================
-                // NORMAL
-                // ======================
                 } else {
-
-                    // base normal + noise
+                    //normal
                     $totalEkor = 100 + rand(-25,25);
                 }
 

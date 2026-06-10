@@ -22,7 +22,7 @@ class HolidaySeeder extends Seeder
         // =========================
         $data = [
 
-            // ===== LEBARAN =====
+            
             [
                 'name' => 'lebaran',
                 'date' => '2022-05-02',
@@ -46,33 +46,36 @@ class HolidaySeeder extends Seeder
                 'date' => '2025-03-31',
                 'pre_days' => 3,
                 'post_days' => 6,
-            ],
-
-
-            // ===== TAHUN BARU =====
+            ], 
             [
                 'name' => 'tahun_baru',
-                'date' => '2022-01-01',
-                'pre_days' => 2,
-                'post_days' => 0,
+                'date' => '2021-12-31',
+                'pre_days' => 1,
+                'post_days' => 2,
             ],
             [
                 'name' => 'tahun_baru',
-                'date' => '2023-01-01',
-                'pre_days' => 2,
-                'post_days' => 0,
+                'date' => '2022-12-31',
+                'pre_days' => 1,
+                'post_days' => 2,
             ],
             [
                 'name' => 'tahun_baru',
-                'date' => '2024-01-01',
-                'pre_days' => 2,
-                'post_days' => 0,
+                'date' => '2023-12-31',
+                'pre_days' => 1,
+                'post_days' => 2,
             ],
             [
                 'name' => 'tahun_baru',
-                'date' => '2025-01-01',
-                'pre_days' => 2,
-                'post_days' => 0,
+                'date' => '2024-12-31',
+                'pre_days' => 1,
+                'post_days' => 2,
+            ],
+            [
+                'name' => 'tahun_baru',
+                'date' => '2025-12-31',
+                'pre_days' => 1,
+                'post_days' => 2,
             ],
         ];
 

@@ -1,49 +1,66 @@
 @extends('layouts.app')
 @section('content_title', 'Edit Stok Opname')
+
 @section('content')
     <div class="card">
         <div class="card-header">
             <h4 class="card-title mb-0">Edit Stok Opname</h4>
         </div>
+
         <div class="card-body">
             <x-alert :errors="$errors" />
-            <form action="{{ route('stok-opname.update', $stokOpname->id) }}" method="POST">
+
+            <form action="{{ route('stok-opname.update', $stokOpname->id) }}" method="POST" id="formStokOpname">
                 @csrf
                 @method('PUT')
+
                 <div class="row">
-                    <div class="col-md-4">
+                    {{-- Batch --}}
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Batch Pembelian</label>
                             <select name="batch_pembelian_id" class="form-control" required>
                                 <option value="">-- pilih batch --</option>
                                 @foreach ($batches as $batch)
-                                    <option value="{{ $batch->id }}"
-                                        {{ old('batch_pembelian_id', optional($stokOpname)->batch_pembelian_id) == $batch->id ? 'selected' : '' }}>
-                                        {{ $batch->kode_batch }} (stok: {{ number_format($batch->stok_ekor) }} ekor /
+                                    <option value="{{ $batch->id }}" {{ old('batch_pembelian_id', $stokOpname->batch_pembelian_id) == $batch->id ? 'selected' : '' }}>
+                                        {{ $batch->kode_batch }}
+                                        (stok: {{ number_format($batch->stok_ekor) }} ekor /
                                         {{ number_format($batch->stok_kg, 2) }} kg)
                                     </option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-4">
+
+                    {{-- Tanggal --}}
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Tanggal Opname</label>
                             <input type="date" name="tanggal_opname" class="form-control"
-                                value="{{ old('tanggal_opname', optional(optional($stokOpname)->tanggal_opname)->toDateString() ?? now()->toDateString()) }}"
-                                required>
+                                value="{{ old('tanggal_opname', optional($stokOpname->tanggal_opname)->toDateString() ?? now()->toDateString()) }}" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                </div>
+
+                <div class="row">
+                    {{-- Timbangan --}}
+                    <div class="col-md-6">
                         <div class="form-group">
-                            <label>Pilih Timbangan (opsional)</label>
-                            <select name="timbangan_id" class="form-control">
-                                <option value="">-- tanpa timbangan --</option>
-                                @foreach ($timbangans as $timbangan)
-                                    <option value="{{ $timbangan->id }}"
-                                        {{ old('timbangan_id', optional($stokOpname)->timbangan_id) == $timbangan->id ? 'selected' : '' }}>
-                                        {{ $timbangan->tanggal->format('d/m/Y') }} - {{ $timbangan->jenis }}
-                                        ({{ number_format($timbangan->total_berat, 2) }} kg)
+                            <label>Jenis Timbangan</label>
+                            <input type="text" class="form-control" value="Timbangan Data Stok Opname" readonly>
+                        </div>
+                    </div>
+                    {{-- Karyawan --}}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Karyawan Penanggung Jawab <small class="text-muted">(bisa pilih lebih dari 1)</small></label>
+                            @php
+                                $selectedKaryawans = old('karyawan_ids', optional($stokOpname->timbangan)->karyawans->pluck('id')->toArray() ?? []);
+                            @endphp
+                            <select name="karyawan_ids[]" class="form-control select2-karyawan" multiple="multiple" style="width:100%">
+                                @foreach ($karyawans as $k)
+                                    <option value="{{ $k->id }}" {{ in_array($k->id, $selectedKaryawans) ? 'selected' : '' }}>
+                                        {{ $k->nama }} ({{ $k->posisi }})
                                     </option>
                                 @endforeach
                             </select>
@@ -51,89 +68,41 @@
                     </div>
                 </div>
 
-                <h4>Data Keranjang</h4>
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="tabelKeranjang">
-                        <thead>
-                            <tr>
-                                <th width="5%">No</th>
-                                <th width="20%">Jumlah Ekor</th>
-                                <th width="20%">Berat Keranjang (Kg)</th>
-                                <th width="20%">Berat Total (Kg)</th>
-                                <th width="20%">Berat Ayam (Kg)</th>
-                                <th width="10%">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="keranjangBody">
-                            @if(!old('keranjangs'))
-                            <tr class="keranjang-item">
-                                <td class="text-center">1</td>
-                                <td>
-                                    <input type="number" name="keranjangs[0][jumlah_ekor]" class="form-control jumlah-ekor"
-                                        placeholder="Jumlah ekor" min="1" required>
-                                </td>
-                                <td>
-                                    <input type="number" name="keranjangs[0][berat_keranjang]"
-                                        class="form-control berat-keranjang" placeholder="Berat keranjang" step="0.01"
-                                        min="0" required>
-                                </td>
-                                <td>
-                                    <input type="number" name="keranjangs[0][berat_total]" class="form-control berat-total"
-                                        placeholder="Berat total" step="0.01" min="0" required>
-                                </td>
-                                <td>
-                                    <input type="number" name="keranjangs[0][berat_ayam]" class="form-control berat-ayam"
-                                        placeholder="Auto-calculate" step="0.01" readonly>
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-danger btn-sm btn-hapus-keranjang" disabled>
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            @endif
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4">
-                                    <button type="button" class="btn btn-success btn-sm" id="btnTambahKeranjang">
-                                        <i class="fas fa-plus"></i> Tambah Keranjang
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="1" class="text-right"><strong>Total:</strong></td>
-                                <td><input type="number" id="totalJumlahEkor" class="form-control" readonly></td>
-                                <td><input type="number" id="totalBerat" class="form-control" step="0.01" readonly>
-                                </td>
-                                <td><input type="number" id="totalBeratAyam" class="form-control" step="0.01" readonly>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                {{-- ================= TABEL KERANJANG ================= --}}
+                <hr>
+                <h5 class="mb-3">Data Keranjang</h5>
 
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label>Berat Aktual (kg)</label>
-                            <input type="number" step="0.01" name="berat_aktual_kg" id="beratAktualKg"
-                                class="form-control" value="{{ old('berat_aktual_kg', optional($stokOpname)->berat_aktual_kg) }}"
-                                required readonly>
-                            <small class="text-muted">Diisi otomatis dari total berat ayam per keranjang.</small>
-                        </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ekor</th>
+                            <th>Berat Total</th>
+                            <th>Berat Keranjang</th>
+                            <th>Berat Ayam</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="keranjangBody"></tbody>
+                </table>
+
+                <button type="button" id="tambahKeranjang" class="btn btn-sm btn-secondary">
+                    + Keranjang
+                </button>
+
+                {{-- ================= TOTAL ================= --}}
+                <div class="row mt-3">
+                    <div class="col-md-6 mb-2">
+                        <label>Total Ekor</label>
+                        <input type="number" name="jumlah_ekor" class="form-control" readonly value="{{ old('jumlah_ekor', optional($stokOpname->timbangan)->total_jumlah_ekor) }}">
                     </div>
-                    <div class="col-md-8">
-                        <div class="form-group">
-                            <label>Catatan</label>
-                            <input type="text" name="catatan" class="form-control"
-                                value="{{ old('catatan', optional($stokOpname)->catatan) }}"
-                                placeholder="Opsional, isi jika ada keterangan tambahan">
-                        </div>
+                    <div class="col-md-6 mb-2">
+                        <label>Total Berat Aktual</label>
+                        <input type="number" step="0.01" name="jumlah_berat_aktual" class="form-control" readonly value="{{ old('jumlah_berat_aktual', optional($stokOpname->timbangan)->total_berat) }}">
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end">
+                {{-- BUTTON --}}
+                <div class="d-flex justify-content-end mt-3">
                     <a href="{{ route('stok-opname.index') }}" class="btn btn-default mr-2">Batal</a>
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                 </div>
@@ -144,143 +113,123 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let keranjangIndex = 1;
-
-            function updateBeratAyam(row) {
-                const beratTotalInput = row.querySelector('.berat-total');
-                const beratKeranjangInput = row.querySelector('.berat-keranjang');
-                const beratAyamInput = row.querySelector('.berat-ayam');
-
-                const beratTotal = parseFloat(beratTotalInput.value) || 0;
-                const beratKeranjang = parseFloat(beratKeranjangInput.value) || 0;
-
-                const beratAyam = beratTotal - beratKeranjang;
-                beratAyamInput.value = beratAyam.toFixed(2);
-            }
-
-            function updateTotals() {
-                let totalEkor = 0;
-                let totalBerat = 0;
-                let totalBeratAyam = 0;
-
-                document.querySelectorAll('.keranjang-item').forEach(function(row) {
-                    const jumlahEkorInput = row.querySelector('.jumlah-ekor');
-                    const beratTotalInput = row.querySelector('.berat-total');
-                    const beratKeranjangInput = row.querySelector('.berat-keranjang');
-                    const beratAyamInput = row.querySelector('.berat-ayam');
-
-                    totalEkor += parseInt(jumlahEkorInput.value) || 0;
-                    totalBerat += parseFloat(beratTotalInput.value) || 0;
-                    const beratAyam = parseFloat(beratAyamInput.value) || ((parseFloat(beratTotalInput.value) || 0) - (parseFloat(beratKeranjangInput.value) || 0));
-                    totalBeratAyam += beratAyam;
-                });
-
-                document.getElementById('totalJumlahEkor').value = totalEkor;
-                document.getElementById('totalBerat').value = totalBerat.toFixed(2);
-                document.getElementById('totalBeratAyam').value = totalBeratAyam.toFixed(2);
-                document.getElementById('beratAktualKg').value = totalBeratAyam.toFixed(2);
-            }
-
-            document.getElementById('btnTambahKeranjang').addEventListener('click', function() {
-                const tbody = document.getElementById('keranjangBody');
-                const newRow = document.createElement('tr');
-                newRow.classList.add('keranjang-item');
-                newRow.innerHTML = `
-                    <td class="text-center">${keranjangIndex + 1}</td>
-                    <td>
-                        <input type="number" name="keranjangs[${keranjangIndex}][jumlah_ekor]"
-                            class="form-control jumlah-ekor" placeholder="Jumlah ekor" min="1" required>
-                    </td>
-                    <td>
-                        <input type="number" name="keranjangs[${keranjangIndex}][berat_keranjang]"
-                            class="form-control berat-keranjang" placeholder="Berat keranjang" step="0.01" min="0"
-                            required>
-                    </td>
-                    <td>
-                        <input type="number" name="keranjangs[${keranjangIndex}][berat_total]"
-                            class="form-control berat-total" placeholder="Berat total" step="0.01" min="0" required>
-                    </td>
-                    <td>
-                        <input type="number" name="keranjangs[${keranjangIndex}][berat_ayam]"
-                            class="form-control berat-ayam" placeholder="Auto-calculate" step="0.01" readonly>
-                    </td>
-                    <td class="text-center">
-                        <button type="button" class="btn btn-danger btn-sm btn-hapus-keranjang">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(newRow);
-                keranjangIndex++;
-                updateTotals();
+        $(document).ready(function() {
+            $('.select2-karyawan').select2({
+                theme: 'bootstrap',
+                placeholder: '-- Pilih Karyawan --',
+                allowClear: true,
             });
-
-            document.getElementById('keranjangBody').addEventListener('input', function(event) {
-                if (event.target.classList.contains('berat-total') || event.target.classList.contains('berat-keranjang')) {
-                    const row = event.target.closest('.keranjang-item');
-                    updateBeratAyam(row);
-                    updateTotals();
-                } else if (event.target.classList.contains('jumlah-ekor')) {
-                    updateTotals();
-                }
-            });
-
-            document.getElementById('keranjangBody').addEventListener('click', function(event) {
-                if (event.target.classList.contains('btn-hapus-keranjang') || event.target.closest('.btn-hapus-keranjang')) {
-                    const button = event.target.classList.contains('btn-hapus-keranjang') ? event.target : event.target.closest('.btn-hapus-keranjang');
-                    const row = button.closest('.keranjang-item');
-                    row.remove();
-                    updateTotals();
-                }
-            });
-
-            document.querySelectorAll('.keranjang-item').forEach(updateBeratAyam);
-            updateTotals();
-
-            // ===== Restore old() values setelah validasi gagal =====
-            @if(old('keranjangs'))
-                const oldKeranjangsEdit = @json(old('keranjangs'));
-                keranjangIndex = Object.keys(oldKeranjangsEdit).length;
-                Object.values(oldKeranjangsEdit).forEach(function(item, index) {
-                    const tbody = document.getElementById('keranjangBody');
-                    const newRow = document.createElement('tr');
-                    newRow.classList.add('keranjang-item');
-                    newRow.innerHTML = `
-                        <td class="text-center">${index + 1}</td>
-                        <td>
-                            <input type="number" name="keranjangs[${index}][jumlah_ekor]"
-                                class="form-control jumlah-ekor" placeholder="Jumlah ekor" min="1"
-                                value="${item.jumlah_ekor || ''}" required>
-                        </td>
-                        <td>
-                            <input type="number" name="keranjangs[${index}][berat_keranjang]"
-                                class="form-control berat-keranjang" placeholder="Berat keranjang" step="0.01"
-                                min="0" value="${item.berat_keranjang || ''}" required>
-                        </td>
-                        <td>
-                            <input type="number" name="keranjangs[${index}][berat_total]"
-                                class="form-control berat-total" placeholder="Berat total" step="0.01"
-                                min="0" value="${item.berat_total || ''}" required>
-                        </td>
-                        <td>
-                            <input type="number" name="keranjangs[${index}][berat_ayam]"
-                                class="form-control berat-ayam" placeholder="Auto-calculate" step="0.01"
-                                value="${item.berat_ayam || ''}" readonly>
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-danger btn-sm btn-hapus-keranjang"
-                                    ${index === 0 ? 'disabled' : ''}>
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(newRow);
-                });
-                document.querySelectorAll('.keranjang-item').forEach(updateBeratAyam);
-                updateTotals();
-            @endif
-
         });
+
+        let keranjangIndex = 0;
+        const form = document.getElementById('formStokOpname');
+
+        /* helper number */
+        const num = v => parseFloat(v) || 0;
+
+        /* ================= RESTORE OLD VALUES / EXISTING DATA ================= */
+        @php
+            $initialKeranjangs = old('keranjangs', optional($stokOpname->timbangan)->keranjangs ?? []);
+        @endphp
+        
+        const initialKeranjangs = @json($initialKeranjangs);
+        
+        if (initialKeranjangs && Object.keys(initialKeranjangs).length > 0) {
+            Object.values(initialKeranjangs).forEach((item) => {
+                tambahRowKeranjang(item);
+            });
+            hitungTotal();
+        } else {
+            tambahRowKeranjang(); // add at least one empty row
+        }
+
+        /* ================= TAMBAH ROW ================= */
+        function tambahRowKeranjang(data = {}) {
+            const ekor = data.jumlah_ekor || '';
+            const total = data.berat_total || '';
+            const keranjang = data.berat_keranjang || '15';
+            const ayam = data.berat_ayam || '';
+
+            document.getElementById('keranjangBody')
+                .insertAdjacentHTML('beforeend', `
+        <tr>
+            <td>
+                <input type="number" name="keranjangs[${keranjangIndex}][jumlah_ekor]"
+                class="form-control ekor" value="${ekor}" required min="1" max="20">
+            </td>
+
+            <td>
+                <input type="number" step="0.01"
+                name="keranjangs[${keranjangIndex}][berat_total]"
+                class="form-control total" value="${total}" required min="0">
+            </td>
+
+            <td>
+                <input type="number" step="0.01"
+                name="keranjangs[${keranjangIndex}][berat_keranjang]"
+                class="form-control keranjang" value="${keranjang}" required min="0">
+            </td>
+
+            <td>
+                <input type="number" step="0.01"
+                name="keranjangs[${keranjangIndex}][berat_ayam]"
+                class="form-control ayam" readonly value="${ayam}" required min="0">
+            </td>
+
+            <td>
+                <button type="button" class="btn btn-danger btn-sm hapus">X</button>
+            </td>
+        </tr>
+    `);
+
+            keranjangIndex++;
+        }
+
+        document.getElementById('tambahKeranjang').onclick = () => {
+            tambahRowKeranjang();
+        };
+
+        /* ================= HAPUS ROW ================= */
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('hapus')) {
+                e.target.closest('tr').remove();
+                hitungTotal();
+            }
+        });
+
+        /* ================= INPUT REALTIME ================= */
+        form.addEventListener('input', e => {
+
+            const row = e.target.closest('tr');
+
+            /* hitung berat ayam */
+            if (row && (
+                    e.target.classList.contains('total') ||
+                    e.target.classList.contains('keranjang')
+                )) {
+                const total = num(row.querySelector('.total').value);
+                const keranjang = num(row.querySelector('.keranjang').value);
+
+                row.querySelector('.ayam').value =
+                    Math.max(total - keranjang, 0).toFixed(2);
+            }
+
+            hitungTotal();
+        });
+
+        /* ================= HITUNG TOTAL ================= */
+        function hitungTotal() {
+
+            let totalEkor = 0;
+            let totalBerat = 0;
+
+            document.querySelectorAll('#keranjangBody tr').forEach(r => {
+                totalEkor += num(r.querySelector('.ekor')?.value);
+                totalBerat += num(r.querySelector('.ayam')?.value);
+            });
+
+            document.querySelector('input[name="jumlah_ekor"]').value = totalEkor;
+            document.querySelector('input[name="jumlah_berat_aktual"]').value = totalBerat.toFixed(2);
+        }
     </script>
 @endpush

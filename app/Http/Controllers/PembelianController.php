@@ -392,7 +392,7 @@ class PembelianController extends Controller
             }
 
             // Hitung subtotal
-            $totalBerat = $pembelianDetail->timbangan->total_berat;
+            $totalBerat = $pembelianDetail->deliveryOrder->total_berat;
             $subtotal = $totalBerat * $request->harga_per_kg;
 
             // Update harga beli per kg dan subtotal di pembelian detail

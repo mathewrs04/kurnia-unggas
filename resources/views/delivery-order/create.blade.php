@@ -43,7 +43,7 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="total_jumlah_ekor">Total Jumlah Ekor <span class="text-danger">*</span></label>
+                            <label for="total_jumlah_ekor">Total Jumlah Ayam (Ekor) <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="total_jumlah_ekor" 
                                    name="total_jumlah_ekor" placeholder="Total ekor" 
                                    value="{{ old('total_jumlah_ekor') }}" min="1" required>

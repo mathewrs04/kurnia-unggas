@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\BatchPembelian;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class BatchPembelianController extends Controller
 {
     public function index()
     {
-        $batchPembelians = BatchPembelian::all();
-        return view('batch-pembelian.index', compact('batchPembelians'));
+        $batchPembelians  = BatchPembelian::where('stok_ekor', '>', '0')->orderBy('kode_batch')->get();
+        $allBatches       = BatchPembelian::whereNull('deleted_at')->get();
+        $totalStokEkor    = $allBatches->where('stok_ekor', '>', 0)->sum('stok_ekor');
+        $totalStokKg      = $allBatches->where('stok_ekor', '>', 0)->sum('stok_kg');
+        $stokMinimal      = (int) Setting::get('stok_minimal_global', 0);
+
+        return view('batch-pembelian.index', compact('batchPembelians', 'totalStokEkor', 'totalStokKg', 'stokMinimal'));
     }
 
     public function store(Request $request)

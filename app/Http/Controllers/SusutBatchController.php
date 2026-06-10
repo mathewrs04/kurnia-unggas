@@ -8,7 +8,17 @@ class SusutBatchController extends Controller
 {
     public function index()
     {
-        $batches = BatchPembelian::with(['stokOpnames', 'mortalitas', 'pembelianDetails.timbangan', 'penjualanDetails'])
+        $batches = BatchPembelian::with([
+                'stokOpnames',
+                'mortalitas',
+                'pembelianDetails.timbangan',
+                // Hanya load detail dari penjualan yang BELUM dihapus (deleted_at IS NULL)
+                'penjualanDetails' => function ($query) {
+                    $query->whereHas('penjualan', function ($q) {
+                        $q->whereNull('deleted_at');
+                    });
+                },
+            ])
             ->where('stok_ekor', '<=', 0)
             ->orderBy('kode_batch')
             ->get();
@@ -32,6 +42,7 @@ class SusutBatchController extends Controller
             $batch->total_berat_terjual = $totalBeratTerjual;
             $batch->total_berat_mortalitas = $totalBeratMortalitas;
             $batch->total_susut_opname_kg = $totalSusutOpname;
+            
             // Susut total = berat awal - (total berat terjual + total berat mortalitas)
             $batch->susut_total_kg = $stokAwalKg - ($totalBeratTerjual + $totalBeratMortalitas);
         }

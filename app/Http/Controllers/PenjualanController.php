@@ -6,6 +6,7 @@ use App\Models\BatchPembelian;
 use App\Models\HargaAyam;
 use App\Models\Karyawan;
 use App\Models\Keranjang;
+use App\Models\MetodePembayaran;
 use App\Models\Pelanggan;
 use App\Models\Penjualan;
 use App\Models\PenjualanDetail;
@@ -40,116 +41,105 @@ class PenjualanController extends Controller
         $hargaAyams = HargaAyam::orderBy('id')->get()->keyBy('tanggal');
         $karyawans = Karyawan::orderBy('nama')->get();
 
-        return view('penjualan.create', compact('noNota', 'pelanggans', 'produks', 'jasaProduks', 'batches', 'timbangans', 'hargaAyams', 'karyawans'));
+        $metodePembayarans = MetodePembayaran::orderBy('nama_metode')->get();
+
+        return view('penjualan.create', compact('noNota', 'pelanggans', 'produks', 'jasaProduks', 'batches', 'timbangans', 'hargaAyams', 'karyawans', 'metodePembayarans'));
     }
 
     public function store(Request $request)
     {
-
-
         $request->validate([
-            'pelanggan_id' => 'required|exists:pelanggans,id',
-            'tanggal_jual' => 'required|date',
-            'no_nota' => 'required|string|unique:penjualans,no_nota',
-            'diskon' => 'nullable|numeric|min:0',
-            'subtotal' => 'required|numeric|min:0',
+            'pelanggan_id'     => 'required|exists:pelanggans,id',
+            'tanggal_jual'     => 'required|date',
+            'no_nota'          => 'required|string|unique:penjualans,no_nota',
+            'diskon'           => 'nullable|numeric|min:0',
+            'subtotal'         => 'required|numeric|min:0',
+            'metode_pembayaran_id' => 'nullable|exists:metode_pembayarans,id',
+            'tipe_penjualan'   => 'required|in:eceran,partai',
 
-            // Validasi timbangan
-            'karyawan_ids'    => 'nullable|array',
-            'karyawan_ids.*'  => 'integer|exists:karyawans,id',
+            // Validasi karyawan (untuk penjualan partai)
+            'karyawan_ids'     => 'nullable|array',
+            'karyawan_ids.*'   => 'integer|exists:karyawans,id',
 
-            // Validasi ayam
-            'ayam.tipe_penjualan' => 'nullable|in:eceran,partai',
-            'ayam.batch_id' => 'nullable|exists:batch_pembelians,id',
-            'ayam.timbangan_id' => 'nullable|exists:timbangans,id',
-            'ayam.jumlah_ekor' => 'nullable|integer|min:1',
-            'ayam.jumlah_berat' => 'nullable|numeric|min:0',
-            // Wajib diisi kalau ada penjualan ayam (eceran/partai)
-            'ayam.harga_per_kg' => 'required_if:ayam.tipe_penjualan,eceran,partai|nullable|numeric|min:0',
-            'ayam.keranjangs' => 'nullable|array',
-            'ayam.keranjangs.*.jumlah_ekor' => 'nullable|integer|min:1',
-            'ayam.keranjangs.*.berat_keranjang' => 'nullable|numeric|min:0',
-            'ayam.keranjangs.*.berat_total' => 'nullable|numeric|min:0',
-            'ayam.keranjangs.*.berat_ayam' => 'nullable|numeric|min:0',
+            // Validasi array ayam (multi-batch)
+            'ayam'             => 'nullable|array',
+            'ayam.*.batch_id'  => 'required_with:ayam|exists:batch_pembelians,id',
+            'ayam.*.jumlah_ekor'  => 'nullable|integer|min:1',
+            'ayam.*.jumlah_berat' => 'nullable|numeric|min:0',
+            'ayam.*.harga_per_kg' => 'required_with:ayam|numeric|min:0',
+            'ayam.*.keranjangs'   => 'nullable|array',
+            'ayam.*.keranjangs.*.jumlah_ekor'    => 'nullable|integer|min:1|max:20',
+            'ayam.*.keranjangs.*.berat_keranjang' => 'nullable|numeric|min:0',
+            'ayam.*.keranjangs.*.berat_total'     => 'nullable|numeric|min:0',
+            'ayam.*.keranjangs.*.berat_ayam'      => 'nullable|numeric|min:0',
 
             // Validasi jasa
-            'jasa' => 'nullable|array',
+            'jasa'             => 'nullable|array',
             'jasa.*.produk_id' => 'nullable|exists:produks,id',
             'jasa.*.jumlah_ekor' => 'nullable|integer|min:1',
-
         ], [
-            'pelanggan_id.required' => 'Pelanggan harus dipilih',
-            'tanggal_jual.required' => 'Tanggal jual harus diisi',
-            'no_nota.required' => 'Nomor nota harus diisi',
-            'no_nota.unique' => 'Nomor nota sudah digunakan',
-            'subtotal.required' => 'Subtotal harus diisi',
-            'ayam.harga_per_kg.required_if' => 'Harga per kg harus diisi ketika ada penjualan ayam',
-            'jasa.*.produk_id.exists' => 'Produk jasa tidak ditemukan',
-            'jasa.*.jumlah_ekor.integer' => 'Jumlah ekor untuk jasa harus berupa angka',
-            'jasa.*.jumlah_ekor.min' => 'Jumlah ekor untuk jasa harus minimal 1',
-            'ayam.tipe_penjualan.in' => 'Tipe penjualan ayam harus eceran atau partai',
-            'ayam.batch_id.exists' => 'Batch pembelian tidak ditemukan',
-            'ayam.timbangan_id.exists' => 'Timbangan tidak ditemukan',
-            'ayam.jumlah_ekor.integer' => 'Jumlah ekor untuk ayam harus berupa angka',
-            'ayam.jumlah_ekor.min' => 'Jumlah ekor untuk ayam harus minimal 1',
-            'ayam.jumlah_berat.numeric' => 'Jumlah berat untuk ayam harus berupa angka',
-            'ayam.jumlah_berat.min' => 'Jumlah berat untuk ayam harus minimal 0',
-            'ayam.keranjangs.*.jumlah_ekor.integer' => 'Jumlah ekor dalam keranjang harus berupa angka',
-            'ayam.keranjangs.*.jumlah_ekor.min' => 'Jumlah ekor dalam keranjang harus minimal 1',
-            'ayam.keranjangs.*.berat_keranjang.numeric' => 'Berat keranjang harus berupa angka',
-            'ayam.keranjangs.*.berat_keranjang.min' => 'Berat keranjang harus minimal 0',
-            'ayam.keranjangs.*.berat_total.numeric' => 'Berat total harus berupa angka',
-            'ayam.keranjangs.*.berat_total.min' => 'Berat total harus minimal 0',
-            'ayam.keranjangs.*.berat_ayam.numeric' => 'Berat ayam harus berupa angka',
-            'ayam.keranjangs.*.berat_ayam.min' => 'Berat ayam harus minimal 0',
-
+            'pelanggan_id.required'    => 'Pelanggan harus dipilih',
+            'tanggal_jual.required'    => 'Tanggal jual harus diisi',
+            'no_nota.required'         => 'Nomor nota harus diisi',
+            'no_nota.unique'           => 'Nomor nota sudah digunakan',
+            'subtotal.required'        => 'Subtotal harus diisi',
+            'tipe_penjualan.required'  => 'Tipe penjualan harus dipilih',
+            'ayam.*.batch_id.required_with' => 'Batch harus dipilih untuk setiap item ayam',
+            'ayam.*.harga_per_kg.required_with' => 'Harga per kg harus diisi untuk setiap item ayam',
+            'ayam.*.keranjangs.*.jumlah_ekor.max' => 'Jumlah ekor per keranjang maksimal 20 ekor',
+            'jasa.*.produk_id.exists'  => 'Produk jasa tidak ditemukan',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $details = [];
-            $subtotalAyam = 0;
-            $subtotalJasa = 0;
+            $details       = [];
+            $subtotalAyam  = 0;
+            $subtotalJasa  = 0;
             $totalEkorAyam = 0;
+            $tipePenjualan = $request->tipe_penjualan;
 
-            // Proses data ayam jika ada
-            if ($request->has('ayam') && $request->ayam['tipe_penjualan']) {
-                $ayam = $request->ayam;
-                $produkAyam = Produk::where('tipe_produk', 'ayam_hidup')->first();
+            $produkAyam = Produk::where('tipe_produk', 'ayam_hidup')->first();
+            if (!$produkAyam) {
+                throw new Exception('Produk ayam hidup tidak ditemukan');
+            }
 
-                if (!$produkAyam) {
-                    throw new Exception('Produk ayam hidup tidak ditemukan');
-                }
+            // multi batch
+            if ($request->has('ayam') && is_array($request->ayam) && count($request->ayam) > 0) {
 
-                $jumlahEkor = 0;
-                $jumlahBerat = 0;
-
-                if ($ayam['tipe_penjualan'] == 'eceran') {
-                    // Eceran: langsung dari input
-                    $jumlahEkor = $ayam['jumlah_ekor'];
-                    $jumlahBerat = $ayam['jumlah_berat'];
-                } else {
-                    // Partai: hitung dari keranjang
-                    if (isset($ayam['keranjangs']) && is_array($ayam['keranjangs'])) {
-                        foreach ($ayam['keranjangs'] as $keranjang) {
-                            $jumlahEkor += $keranjang['jumlah_ekor'];
-                            $jumlahBerat += $keranjang['berat_ayam'];
-                        }
+                foreach ($request->ayam as $ayamItem) {
+                    // Lewati baris kosong (tidak ada batch dipilih)
+                    if (empty($ayamItem['batch_id'])) {
+                        continue;
                     }
 
-                    // Buat data timbangan
-                    $timbangan = Timbangan::create([
-                        'jenis'             => 'timbangan_data_penjualan',
-                        'tanggal'           => $request->tanggal_jual,
-                        'total_jumlah_ekor' => $jumlahEkor,
-                        'total_berat'       => $jumlahBerat,
-                    ]);
-                    $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
+                    $jumlahEkor = 0;
+                    $jumlahBerat = 0;
+                    $timbanganId = null;
 
-                    // Simpan data keranjang
-                    if (isset($ayam['keranjangs']) && is_array($ayam['keranjangs'])) {
-                        foreach ($ayam['keranjangs'] as $keranjangData) {
+                    if ($tipePenjualan === 'eceran') {
+                        $jumlahEkor  = (int) ($ayamItem['jumlah_ekor'] ?? 0);
+                        $jumlahBerat = (float) ($ayamItem['jumlah_berat'] ?? 0);
+                    } else {
+                        // Partai: hitung dari keranjang masing-masing batch
+                        if (isset($ayamItem['keranjangs']) && is_array($ayamItem['keranjangs'])) {
+                            foreach ($ayamItem['keranjangs'] as $keranjang) {
+                                $jumlahEkor  += (int) ($keranjang['jumlah_ekor'] ?? 0);
+                                $jumlahBerat += (float) ($keranjang['berat_ayam'] ?? 0);
+                            }
+                        }
+
+                        // Buat data timbangan untuk batch ini
+                        $timbangan = Timbangan::create([
+                            'jenis'             => 'timbangan_data_penjualan',
+                            'tanggal'           => $request->tanggal_jual,
+                            'total_jumlah_ekor' => $jumlahEkor,
+                            'total_berat'       => $jumlahBerat,
+                        ]);
+                        $timbangan->karyawans()->sync($request->karyawan_ids ?? []);
+
+                        // Simpan data keranjang
+                        foreach ($ayamItem['keranjangs'] as $keranjangData) {
                             Keranjang::create([
                                 'timbangan_id'    => $timbangan->id,
                                 'jumlah_ekor'     => $keranjangData['jumlah_ekor'],
@@ -158,57 +148,52 @@ class PenjualanController extends Controller
                                 'berat_ayam'      => $keranjangData['berat_ayam'],
                             ]);
                         }
+
+                        $timbanganId = $timbangan->id;
                     }
+
+                    $hargaPerKg   = (float) $ayamItem['harga_per_kg'];
+                    $subtotalItem = $jumlahBerat * $hargaPerKg;
+                    $subtotalAyam += $subtotalItem;
+                    $totalEkorAyam += $jumlahEkor;
+
+                    $details[] = [
+                        'produk_id'          => $produkAyam->id,
+                        'batch_id'           => $ayamItem['batch_id'],
+                        'timbangan_id'       => $timbanganId,
+                        'tipe_penjualan'     => $tipePenjualan,
+                        'jumlah_ekor'        => $jumlahEkor,
+                        'jumlah_berat'       => $jumlahBerat,
+                        'harga_satuan'       => $hargaPerKg,
+                        'subtotal'           => $subtotalItem,
+                        'metode_pembayaran_id' => $request->metode_pembayaran_id ?: null,
+                    ];
                 }
-
-                $hargaPerKg = $ayam['harga_per_kg'];
-
-                // Pastikan harga per kg diisi ketika ada penjualan ayam
-                if ($hargaPerKg === null || $hargaPerKg === '') {
-                    throw new Exception('Harga per kg harus diisi untuk penjualan ayam.');
-                }
-
-                $totalEkorAyam = $jumlahEkor;
-                $subtotalAyam = $jumlahBerat * $hargaPerKg;
-
-                $batchId = $ayam['batch_id'] ?? null;
-                $timbanganId = isset($timbangan) ? $timbangan->id : ($ayam['timbangan_id'] ?? null);
-
-                $details[] = [
-                    'produk_id' => $produkAyam->id,
-                    'batch_id' => $batchId,
-                    'timbangan_id' => $timbanganId,
-                    'jumlah_ekor' => $jumlahEkor,
-                    'jumlah_berat' => $jumlahBerat,
-                    'harga_satuan' => $hargaPerKg,
-                    'subtotal' => $subtotalAyam,
-                ];
             }
 
-            // Proses data jasa jika ada
+            // jasa
             if ($request->has('jasa') && is_array($request->jasa)) {
-
                 foreach ($request->jasa as $jasaItem) {
                     $produkJasa = Produk::find($jasaItem['produk_id']);
-
                     if (!$produkJasa) {
                         continue;
                     }
 
-                    $jumlahEkor = $jasaItem['jumlah_ekor'];
-                    $hargaSatuan = $produkJasa->harga_satuan;
+                    $jumlahEkor     = (int) $jasaItem['jumlah_ekor'];
+                    $hargaSatuan    = $produkJasa->harga_satuan;
                     $subtotalItemJasa = $jumlahEkor * $hargaSatuan;
-                    $subtotalJasa += $subtotalItemJasa;
-
+                    $subtotalJasa  += $subtotalItemJasa;
 
                     $details[] = [
-                        'produk_id' => $produkJasa->id,
-                        'batch_id' => null,
-                        'timbangan_id' => null,
-                        'jumlah_ekor' => $jumlahEkor,
-                        'jumlah_berat' => null,
-                        'harga_satuan' => $hargaSatuan,
-                        'subtotal' => $subtotalItemJasa,
+                        'produk_id'          => $produkJasa->id,
+                        'batch_id'           => null,
+                        'timbangan_id'       => null,
+                        'tipe_penjualan'     => null,
+                        'jumlah_ekor'        => $jumlahEkor,
+                        'jumlah_berat'       => null,
+                        'harga_satuan'       => $hargaSatuan,
+                        'subtotal'           => $subtotalItemJasa,
+                        'metode_pembayaran_id' => $request->metode_pembayaran_id ?: null,
                     ];
                 }
             }
@@ -216,6 +201,16 @@ class PenjualanController extends Controller
             // Validasi minimal 1 item
             if (empty($details)) {
                 throw new Exception('Minimal harus ada 1 item penjualan (ayam atau jasa)');
+            }
+
+            // Validasi batch harus ada jika ada penjualan ayam
+            if ($totalEkorAyam > 0) {
+                $ayamDetails = array_filter($details, fn($d) => $d['produk_id'] === $produkAyam->id);
+                foreach ($ayamDetails as $d) {
+                    if (!$d['batch_id']) {
+                        throw new Exception('Batch pembelian harus dipilih untuk setiap penjualan ayam');
+                    }
+                }
             }
 
             $subtotal = ($subtotalAyam + $subtotalJasa) - ($request->diskon ?? 0);
@@ -229,17 +224,17 @@ class PenjualanController extends Controller
 
             // Buat data penjualan
             $penjualan = Penjualan::create([
-                'no_nota' => $request->no_nota,
-                'tanggal_jual' => $request->tanggal_jual,
-                'tipe_penjualan' => $request->ayam['tipe_penjualan'],
-                'status' => $status,
-                'diskon' => $request->diskon ?? 0,
-                'subtotal' => $subtotal,
-                'pelanggan_id' => $request->pelanggan_id,
-                'user_id' => auth()->id(),
+                'no_nota'       => $request->no_nota,
+                'tanggal_jual'  => $request->tanggal_jual,
+                'tipe_penjualan' => $tipePenjualan,
+                'status'        => $status,
+                'diskon'        => $request->diskon ?? 0,
+                'subtotal'      => $subtotal,
+                'pelanggan_id'  => $request->pelanggan_id,
+                'user_id'       => auth()->id(),
             ]);
 
-            // Simpan detail penjualan dan update stok
+            // Simpan detail penjualan dan update stok batch
             foreach ($details as $detail) {
                 $detail['penjualan_id'] = $penjualan->id;
                 PenjualanDetail::create($detail);
@@ -248,9 +243,11 @@ class PenjualanController extends Controller
                 if ($detail['batch_id']) {
                     $batch = BatchPembelian::find($detail['batch_id']);
                     if ($batch) {
-
-
-                        $batch->stok_ekor -= $detail['jumlah_ekor'];
+                        if ($batch->stok_ekor >= $detail['jumlah_ekor']) {
+                            $batch->stok_ekor -= $detail['jumlah_ekor'];
+                        } else {
+                            throw new Exception('Stok ayam pada batch ' . $batch->kode_batch . ' tidak mencukupi');
+                        }
                         if ($detail['jumlah_berat']) {
                             $batch->stok_kg -= $detail['jumlah_berat'];
                         }
@@ -262,7 +259,6 @@ class PenjualanController extends Controller
             DB::commit();
 
             Alert::success('Berhasil', 'Data penjualan berhasil disimpan');
-            // Redirect with print session flag so it automatically triggers the print dialog on show
             return redirect()->route('penjualan.show', $penjualan->id)->with('print_nota', true);
         } catch (Exception $e) {
             DB::rollBack();
@@ -297,13 +293,13 @@ class PenjualanController extends Controller
         $printItems = $penjualan->penjualanDetails->map(function ($detail) {
             $isJasa = $detail->produk && $detail->produk->tipe_produk == 'jasa';
             return [
-                'nama_item' => $isJasa ? $detail->produk->nama_produk : ($detail->deskripsi ?: 'Ayam Hidup'),
-                'jumlah_ekor' => $detail->jumlah_ekor,
+                'nama_item'    => $isJasa ? $detail->produk->nama_produk : ($detail->deskripsi ?: 'Ayam Hidup'),
+                'jumlah_ekor'  => $detail->jumlah_ekor,
                 'jumlah_berat' => $detail->jumlah_berat ?? 0,
                 'harga_satuan' => $detail->harga_satuan,
-                'subtotal' => $detail->subtotal,
+                'subtotal'     => $detail->subtotal,
                 'satuan_harga' => $isJasa ? '/ekor' : '/kg',
-                'deskripsi' => $detail->deskripsi,
+                'deskripsi'    => $detail->deskripsi,
             ];
         });
 
@@ -347,7 +343,7 @@ class PenjualanController extends Controller
 
             $penjualan = Penjualan::findOrFail($id);
 
-            // Kembalikan stok batch
+            // Kembalikan stok batch untuk semua detail ayam
             foreach ($penjualan->penjualanDetails as $detail) {
                 if ($detail->batch_id) {
                     $batch = BatchPembelian::find($detail->batch_id);
@@ -401,9 +397,9 @@ class PenjualanController extends Controller
             ->sum('jumlah_ekor');
 
         return view('penjualan.laporan-harian', [
-            'tanggal' => $tanggal,
+            'tanggal'    => $tanggal,
             'penjualans' => $penjualans,
-            'totalEkor' => $totalEkor,
+            'totalEkor'  => $totalEkor,
         ]);
     }
 

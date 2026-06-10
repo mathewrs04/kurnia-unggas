@@ -27,7 +27,7 @@
                         <th>Kode DO</th>
                         <th>Tanggal DO</th>
                         <th>Peternak</th>
-                        <th>Total Jumlah Ekor</th>
+                        <th>Total Jumlah Ayam (Ekor)</th>
                         <th>Total Berat (kg)</th>
                         <th>Aksi</th>
                     </tr>

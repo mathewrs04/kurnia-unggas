@@ -7,22 +7,11 @@
             <h4 class="card-title">Setting Harga Ayam</h4>
         </div>
         <div class="card-body">
-
-            @if ($errors->any())
-                <div class="alert alert-danger d-flex flex-column">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <small class="text-white my-1">{{ $error }}</small>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             <div class="mb-3">
                 <x-harga-ayam.form-harga-ayam />
             </div>
-
-            <table class="table table-sm table-bordered table-striped" id="table1">
+            <x-alert :errors="$errors" />
+            <table class="table table-sm" id="table1">
                 <thead>
                     <tr>
                         <th>No</th>

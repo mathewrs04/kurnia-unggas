@@ -196,7 +196,7 @@ class ForecastController extends Controller
         ]);
 
         $mulai = $request->get('mulai', now()->toDateString());
-        $sampai = $request->get('sampai', now()->addDays(7)->toDateString());
+        $sampai = $request->get('sampai', now()->addDays(2)->toDateString());
 
         $hariPrediksi = Carbon::parse($mulai)->diffInDays(Carbon::parse($sampai)) + 1;
 

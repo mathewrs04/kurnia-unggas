@@ -44,7 +44,10 @@ class Penjualan extends Model
     {
         $prefix = 'NJ-';
         $date = date('Ymd');
-        $lastNota = self::whereDate('created_at', date('Y-m-d'))
+
+       
+        $lastNota = self::withTrashed()
+            ->whereDate('created_at', date('Y-m-d'))
             ->orderBy('id', 'desc')
             ->first();
         

@@ -107,7 +107,7 @@
                     <table class="table mt-2" id="tabelKeranjang">
                         <thead>
                             <tr>
-                                <th>Jumlah Ekor</th>
+                                <th>Jumlah Ayam (Ekor)</th>
                                 <th>Berat Total (Kg)</th>
                                 <th>Berat Keranjang (Kg)</th>
                                 <th>Berat Ayam (Kg)</th>
@@ -121,7 +121,7 @@
                                         <tr class="keranjang-item">
                                             <td>
                                                 <input type="number" name="keranjangs[{{ $index }}][jumlah_ekor]" 
-                                                       class="form-control jumlah-ekor" placeholder="Jumlah ekor" 
+                                                       class="form-control jumlah-ekor" placeholder="Jumlah Ayam (Ekor)" 
                                                        value="{{ $keranjang->jumlah_ekor }}" min="1" required>
                                             </td>
                                             <td>
@@ -150,7 +150,7 @@
                                     <tr class="keranjang-item">
                                         <td>
                                             <input type="number" name="keranjangs[0][jumlah_ekor]" class="form-control jumlah-ekor" 
-                                                   placeholder="Jumlah ekor" min="1" required>
+                                                   placeholder="Jumlah Ayam (Ekor)" min="1" required>
                                         </td>
                                         <td>
                                             <input type="number" name="keranjangs[0][berat_total]" class="form-control berat-total" 
@@ -255,7 +255,7 @@
                     <tr class="keranjang-item">
                         <td>
                             <input type="number" name="keranjangs[${keranjangIndex}][jumlah_ekor]" 
-                                   class="form-control jumlah-ekor" placeholder="Jumlah ekor" min="1" required>
+                                   class="form-control jumlah-ekor" placeholder="Jumlah Ayam (Ekor)" min="1" required>
                         </td>
                         <td>
                             <input type="number" name="keranjangs[${keranjangIndex}][berat_total]" 
@@ -312,7 +312,7 @@
                 row.find('.berat-ayam').val(beratAyam >= 0 ? beratAyam.toFixed(2) : 0);
             }
 
-            // Update total jumlah ekor dan berat
+            // Update total Jumlah Ayam (Ekor) dan berat
             function updateTotal() {
                 let totalEkor = 0;
                 let totalBerat = 0;
@@ -367,7 +367,7 @@
                         <tr class="keranjang-item">
                             <td>
                                 <input type="number" name="keranjangs[${index}][jumlah_ekor]"
-                                       class="form-control jumlah-ekor" placeholder="Jumlah ekor" min="1"
+                                       class="form-control jumlah-ekor" placeholder="Jumlah Ayam (Ekor)" min="1"
                                        value="${item.jumlah_ekor || ''}" required>
                             </td>
                             <td>

@@ -88,7 +88,7 @@
                             Marketing: {{ $pemasok->nama_marketing ?? '-' }} | Telp: {{ $pemasok->no_telp_marketing ?? '-' }}
                         </small>
                     </div>
-                    <div class="mt-2 mt-md-0 text-md-right">
+                    <div class="mt-2 mt-md-0 ml-auto">
                         <span class="badge badge-info mr-1">{{ number_format($pemasok->total_peternak) }} peternak</span>
                         <span class="badge badge-primary mr-1">{{ number_format($pemasok->total_pembelian) }} pembelian</span>
                         <span class="badge badge-success">Rp {{ number_format($pemasok->total_nominal, 0, ',', '.') }}</span>

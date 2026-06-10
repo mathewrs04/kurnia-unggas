@@ -30,7 +30,7 @@
 
                 <div class="col-md-6">
                     <dl class="row mb-0">
-                        <dt class="col-sm-5">Total Jumlah Ekor</dt>
+                        <dt class="col-sm-5">Total Jumlah Ayam (Ekor)</dt>
                         <dd class="col-sm-7">{{ number_format($deliveryOrder->total_jumlah_ekor) }} ekor</dd>
 
                         <dt class="col-sm-5">Total Berat</dt>

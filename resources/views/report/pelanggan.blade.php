@@ -17,7 +17,7 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h4 class="card-title mb-0"><i class="fas fa-chart-bar mr-2"></i>Ranking Pelanggan</h4>
-        <span class="badge badge-primary">{{ $pelanggans->count() }} pelanggan</span>
+        <span class="badge badge-primary ml-auto">{{ $pelanggans->count() }} pelanggan</span>
     </div>
     <div class="card-body">
         @if ($pelanggans->isEmpty())
@@ -42,7 +42,7 @@
                                 <td class="text-center font-weight-bold">{{ $loop->iteration }}</td>
                                 <td>{{ $pelanggan->nama }}</td>
                                 <td class="text-center">{{ number_format($pelanggan->penjualans_count ?? 0) }}</td>
-                                <td class="text-right font-weight-bold">
+                                <td class="text-right font-weight-bold" data-order="{{ $pelanggan->penjualans_sum_subtotal ?? 0 }}">
                                     Rp {{ number_format($pelanggan->penjualans_sum_subtotal ?? 0, 0, ',', '.') }}
                                 </td>
                             </tr>
@@ -52,7 +52,7 @@
                         <tr>
                             <td colspan="2" class="text-right">Total</td>
                             <td class="text-center">{{ number_format($pelanggans->sum('penjualans_count')) }}</td>
-                            <td class="text-right">
+                            <td class="text-right" data-order="{{ $pelanggans->sum(fn ($item) => $item->penjualans_sum_subtotal ?? 0) }}">
                                 Rp {{ number_format($pelanggans->sum(fn ($item) => $item->penjualans_sum_subtotal ?? 0), 0, ',', '.') }}
                             </td>
                         </tr>

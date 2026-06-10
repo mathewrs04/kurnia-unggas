@@ -15,7 +15,7 @@
 
                 <div class="row">
                     {{-- Batch --}}
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Batch Pembelian</label>
                             <select name="batch_pembelian_id" class="form-control" required>
@@ -32,7 +32,7 @@
                     </div>
 
                     {{-- Tanggal --}}
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Tanggal Opname</label>
                             <input type="date" name="tanggal_opname" class="form-control"
@@ -40,16 +40,17 @@
                         </div>
                     </div>
 
+                    
+                </div>
+
+                <div class="row">
                     {{-- Timbangan --}}
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label>Jenis Timbangan</label>
                             <input type="text" class="form-control" value="Timbangan Data Stok Opname" readonly>
                         </div>
                     </div>
-                </div>
-
-                <div class="row">
                     {{-- Karyawan --}}
                     <div class="col-md-6">
                         <div class="form-group">
@@ -148,7 +149,7 @@
         <tr>
             <td>
                 <input type="number" name="keranjangs[${keranjangIndex}][jumlah_ekor]"
-                class="form-control ekor" value="${ekor}">
+                class="form-control ekor" value="${ekor}" min="1" max="20">
             </td>
 
             <td>
@@ -160,7 +161,7 @@
             <td>
                 <input type="number" step="0.01"
                 name="keranjangs[${keranjangIndex}][berat_keranjang]"
-                class="form-control keranjang" value="${keranjang}">
+                class="form-control keranjang" value="15">
             </td>
 
             <td>

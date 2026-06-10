@@ -7,7 +7,7 @@
         </div>
         <div class="card-body">
 
-            <div>
+            <div class="mb-3">
                 <x-karyawan.form-karyawan />
             </div>
             <x-alert :errors="$errors" />

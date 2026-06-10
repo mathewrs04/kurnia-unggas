@@ -22,6 +22,7 @@ use App\Http\Controllers\SetoranController;
 use App\Http\Controllers\LaporanKeuntunganController;
 use App\Http\Controllers\SusutBatchController;
 use App\Http\Controllers\TimbanganController;
+use App\Http\Controllers\SettingController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,26 @@ Route::middleware('auth')->group(function () {
             Route::get('/data', 'data')->name('data');
             Route::get('/evaluate', 'evaluate')->name('evaluate');
             Route::get('/rekomendasi', 'rekomendasi')->name('rekomendasi');
+        });
+        Route::prefix('report')->as('report.')->group(function () {
+            Route::prefix('timbangan')->as('timbangan.')->controller(TimbanganController::class)->group(function () {
+                Route::get('/', 'laporan')->name('index');
+            });
+            Route::prefix('pelanggan')->as('pelanggan.')->controller(PelangganController::class)->group(function () {
+                Route::get('/', 'laporan')->name('index');
+            });
+            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
+                Route::get('/', 'laporanPemasokPeternak')->name('index');
+            });
+            Route::prefix('keuntungan')->as('keuntungan.')->controller(LaporanKeuntunganController::class)->group(function () {
+                Route::get('/', 'index')->name('index');
+            });
+            Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
+                Route::get('/', 'report')->name('index');
+            });
+            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
+                Route::get('/', 'laporan')->name('index');
+            });
         });
     });
 
@@ -162,31 +183,18 @@ Route::middleware('auth')->group(function () {
         Route::prefix('mortalitas-ayam')->as('mortalitas-ayam.')->controller(MortalitasAyamController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
+            Route::put('/{id}', 'update')->name('update');
             Route::delete('/{id}/destroy', 'destroy')->name('destroy');
         });
 
         Route::get('/susut-batch', [SusutBatchController::class, 'index'])->name('susut-batch.index');
 
-        Route::prefix('report')->as('report.')->group(function () {
-            Route::prefix('timbangan')->as('timbangan.')->controller(TimbanganController::class)->group(function () {
-                Route::get('/', 'laporan')->name('index');
-            });
-            Route::prefix('pelanggan')->as('pelanggan.')->controller(PelangganController::class)->group(function () {
-                Route::get('/', 'laporan')->name('index');
-            });
-            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
-                Route::get('/', 'laporanPemasokPeternak')->name('index');
-            });
-            Route::prefix('keuntungan')->as('keuntungan.')->controller(LaporanKeuntunganController::class)->group(function () {
-                Route::get('/', 'index')->name('index');
-            });
-            Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
-                Route::get('/', 'report')->name('index');
-            });
-            Route::prefix('pemasok-peternak')->as('pemasok-peternak.')->controller(PemasokController::class)->group(function () {
-                Route::get('/', 'laporan')->name('index');
-            });
+        Route::prefix('setting')->as('setting.')->controller(SettingController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('/', 'update')->name('update');
         });
+
+        
 
         Route::prefix('setoran')->as('setoran.')->controller(SetoranController::class)->group(function () {
             Route::put('/{id}/approve', 'approve')->name('approve');

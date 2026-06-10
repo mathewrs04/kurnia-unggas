@@ -14,7 +14,7 @@ class DeliveryOrderController extends Controller
 {
     public function index()
     {
-        $deliveryOrders = DeliveryOrder::get();
+        $deliveryOrders = DeliveryOrder::latest()->get();
         confirmDelete('Hapus Data', 'Yakin hapus data ini?');
         return view('delivery-order.index', compact('deliveryOrders'));
     }

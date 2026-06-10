@@ -59,7 +59,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="total_jumlah_ekor">Total Jumlah Ekor</label>
+                            <label for="total_jumlah_ekor">Total Jumlah Ayam (Ekor)</label>
                             <input type="number" class="form-control" id="total_jumlah_ekor" name="total_jumlah_ekor" required>
                         </div>
 

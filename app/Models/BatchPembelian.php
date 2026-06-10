@@ -15,7 +15,6 @@ class BatchPembelian extends Model
         'stok_ekor',
         'stok_ekor_minimal',
         'stok_kg',
-        'user_id',
     ];
 
     protected $casts = [

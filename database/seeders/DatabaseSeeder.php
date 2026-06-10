@@ -21,7 +21,6 @@ class DatabaseSeeder extends Seeder
             ProdukSeeder::class,
             HolidaySeeder::class,
             PenjualanAyamHarianSeeder::class,
-            SimulasiJanuari2026Seeder::class,
         ]);
     }
 }

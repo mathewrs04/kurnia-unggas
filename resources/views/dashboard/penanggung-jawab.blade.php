@@ -10,6 +10,17 @@
     </div>
 @endif
 
+<!-- Alert Peringatan Stok Minimal Global -->
+@if (session('warning_stok_global'))
+    <div class="alert alert-danger alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <i class="fas fa-exclamation-circle"></i> <strong>{{ session('warning_stok_global') }}</strong>
+        <a href="{{ route('master.batch-pembelian.index') }}" class="ml-2 btn btn-sm btn-outline-light">
+            <i class="fas fa-boxes"></i> Lihat Stok
+        </a>
+    </div>
+@endif
+
 <!-- Info Boxes -->
 <div class="row">
     <div class="col-12 col-sm-6 col-md-3">
@@ -112,16 +123,20 @@
     gradientPenjualan.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
     gradientPenjualan.addColorStop(1, 'rgba(40, 167, 69, 0)');
 
+    const rawLabelsPenjualan = @json($grafikPenjualan->pluck('bulan'));
+    const labelsPenjualan = rawLabelsPenjualan.map(b => new Date(b + '-01').toLocaleString('id-ID', { month: 'short', year: 'numeric' }));
+
     new Chart(document.getElementById('grafikPenjualan'), {
         type: 'line',
         data: {
-            labels: @json($grafikPenjualan->pluck('bulan')),
+            labels: labelsPenjualan,
             datasets: [{
                 label: 'Penjualan (Rp)',
                 data: @json($grafikPenjualan->pluck('total')),
                 borderColor: '#28a745',
                 backgroundColor: gradientPenjualan,
                 borderWidth: 2,
+                pointRadius: 3,
                 fill: true,
                 tension: 0.4
             }]
@@ -136,6 +151,9 @@
                 }
             },
             scales: {
+                x: {
+                    ticks: { maxRotation: 45, minRotation: 45 }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
@@ -153,16 +171,25 @@
     gradientPembelian.addColorStop(0, 'rgba(255, 193, 7, 0.5)');
     gradientPembelian.addColorStop(1, 'rgba(255, 193, 7, 0)');
 
+    const rawLabelsPembelian = @json($grafikPembelian->pluck('bulan'));
+    const labelsPembelian = rawLabelsPembelian.map(b => new Date(b + '-01').toLocaleString('id-ID', { month: 'short', year: 'numeric' }));
+    const rawDataPembelian = @json($grafikPembelian->pluck('total'));
+    const dataPembelianArray = rawDataPembelian.map(n => {
+        const cleaned = String(n).replace(/[^0-9\-\.]/g, '');
+        return cleaned === '' ? 0 : Number(cleaned);
+    });
+
     new Chart(document.getElementById('grafikPembelian'), {
         type: 'line',
         data: {
-            labels: @json($grafikPembelian->pluck('bulan')),
+            labels: labelsPembelian,
             datasets: [{
                 label: 'Pembelian (Rp)',
-                data: @json($grafikPembelian->pluck('total')),
+                data: dataPembelianArray,
                 borderColor: '#ffc107',
                 backgroundColor: gradientPembelian,
                 borderWidth: 2,
+                pointRadius: 3,
                 fill: true,
                 tension: 0.4
             }]
@@ -177,6 +204,9 @@
                 }
             },
             scales: {
+                x: {
+                    ticks: { maxRotation: 45, minRotation: 45 }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
